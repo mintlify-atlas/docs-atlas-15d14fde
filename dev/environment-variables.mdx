@@ -1,0 +1,76 @@
+---
+title: "Environment variables"
+description: "Configure the API base URL and other environment settings"
+---
+
+## Overview
+
+JyPS uses Vite's built-in environment variable system. All variables that need to be readable in browser code must be prefixed with `VITE_`. Variables without this prefix are only available in Vite's Node.js build process and are never exposed to the client bundle.
+
+## Creating the `.env` file
+
+Create a `.env` file at the root of the project (next to `package.json`):
+
+```bash .env
+VITE_API_BASE_URL=https://your-backend-url/api/v1
+```
+
+<Warning>
+  The `.env` file is **not** automatically excluded by this project's `.gitignore` (which only covers `*.local` files). Add `.env` to your `.gitignore` manually to prevent accidentally committing API URLs or other sensitive values to the repository.
+</Warning>
+
+## Variables reference
+
+### `VITE_API_BASE_URL`
+
+The base URL for all HTTP requests made by `useApi`. Every call to `request(endpoint, method, body)` prepends this value to the endpoint path.
+
+| Property | Value |
+|----------|-------|
+| **Required** | No — a hardcoded fallback is used if unset |
+| **Type** | String (URL) |
+| **Example** | `https://api.example.com/api/v1` |
+| **Fallback** | `https://yolonda-otocystic-personably.ngrok-free.dev/api/v1` |
+
+The fallback is defined directly in `src/hooks/useApi.js`:
+
+```javascript src/hooks/useApi.js
+const BASE_URL = import.meta.env.VITE_API_BASE_URL
+  || 'https://yolonda-otocystic-personably.ngrok-free.dev/api/v1';
+```
+
+<Note>
+  The fallback URL points to an ngrok tunnel used during development. It may be offline or recycled at any time. Always set `VITE_API_BASE_URL` to your own backend URL when working locally.
+</Note>
+
+## Environment-specific setup
+
+### Local development
+
+Point `VITE_API_BASE_URL` at a locally running instance of the JyPS backend, or at an ngrok tunnel if the backend is on a remote machine:
+
+```bash .env
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+```
+
+### Staging / production
+
+Set the variable in your CI/CD pipeline or hosting platform (e.g., Vercel, Netlify, Railway) rather than committing a `.env` file. For example, in a GitHub Actions workflow:
+
+```yaml .github/workflows/deploy.yml
+env:
+  VITE_API_BASE_URL: ${{ secrets.API_BASE_URL }}
+```
+
+## ngrok tunnels
+
+When `VITE_API_BASE_URL` points to an ngrok URL, `useApi` automatically includes the header required to bypass ngrok's browser interstitial page:
+
+```javascript src/hooks/useApi.js
+const headers = {
+  'Content-Type': 'application/json',
+  'ngrok-skip-browser-warning': 'true'
+};
+```
+
+This header is sent with **every** request regardless of the base URL, so it has no negative effect when pointing at a non-ngrok backend.

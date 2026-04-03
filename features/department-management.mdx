@@ -1,0 +1,106 @@
+---
+title: "Department management"
+description: "Create and manage departments within your institution"
+---
+
+The **Gestión de Departamentos** screen is available to administrators. It provides a list view of every department in the institution, with status filtering, inline editing, and activate/deactivate controls.
+
+## Dashboard statistics
+
+Three summary cards display live counts at the top of the page.
+
+<CardGroup cols={3}>
+  <Card title="Total Departamentos" icon="building-2">
+    The total number of departments registered in the system.
+  </Card>
+  <Card title="Activos" icon="check-circle">
+    Departments with `estado: "Activo"`. Shown in green.
+  </Card>
+  <Card title="Inactivos" icon="x-circle">
+    Departments with `estado: "Inactivo"`. Shown in red.
+  </Card>
+</CardGroup>
+
+## Filtering departments
+
+### Search bar
+
+The text input filters the department list in real time against two fields:
+
+- Department name (`nombre`)
+- Description (`descripcion`)
+
+### Status filter buttons
+
+Three toggle buttons narrow the list by status:
+
+| Button | Behaviour |
+|---|---|
+| **Todos** | Shows all departments (default) |
+| **Activos** | Shows only departments with `estado: "Activo"` |
+| **Inactivos** | Shows only departments with `estado: "Inactivo"` |
+
+The active selection is highlighted in navy (`#0F2C59`). Both the search and status filter work together — a department must satisfy both conditions to appear.
+
+## Department cards
+
+Each department is rendered as a card in a single-column grid. The card contains:
+
+- **Avatar** — a navy circle with a building icon
+- **Name** — displayed as the card heading
+- **Manager badge** — blue pill showing `Jefe: <name>`, or "Sin asignar" if no manager has been assigned
+- **Worker count badge** — grey pill showing the number of staff assigned (`<n> Trabajadores`)
+- **Status badge** — green `Activo` or red `Inactivo` indicator
+- **Description** — full description text shown below a horizontal divider
+
+## Creating a department
+
+Click the green **Nuevo Departamento** button in the page header to open the creation modal.
+
+<Steps>
+  <Step title="Enter the department name">
+    The **Nombre del departamento** field is required. Enter a descriptive name such as "Recursos Humanos" or "Sistemas".
+  </Step>
+  <Step title="Enter a description">
+    The **Descripción** field is required. Describe the department's responsibilities and scope. The text area has a minimum height and does not resize automatically.
+  </Step>
+  <Step title="Submit">
+    Click **Crear Departamento** to save. Click **Cancelar** to discard and close the modal without saving.
+  </Step>
+</Steps>
+
+## Editing a department
+
+Click the **pencil icon** on any department card to open the same modal in edit mode. The modal title changes to **Editar Departamento** and both fields are pre-filled with the department's current name and description.
+
+Click **Guardar Cambios** to save, or **Cancelar** to discard.
+
+<Note>
+The manager (`jefe`) and worker count are display-only fields on the department card. They are not editable through the department form; worker assignments are managed separately through the user management and worker management screens.
+</Note>
+
+## Activating and deactivating departments
+
+Each card shows either a **Desactivar** button (red, for active departments) or an **Activar** button (green, for inactive departments).
+
+Clicking either button opens a confirmation modal before any change is applied.
+
+### Confirmation modal behaviour
+
+| Action | Modal type | Confirm button colour |
+|---|---|---|
+| Deactivate | `danger` | Red |
+| Activate | `success` | Green |
+
+The confirmation message follows the pattern:
+
+- **Deactivate:** "¿Estás seguro de que deseas desactivar el departamento de `<nombre>`?"
+- **Activate:** "¿Estás seguro de que deseas activar el departamento de `<nombre>`?"
+
+Confirming the action updates the department's `estado` value immediately in the UI. Clicking **Cancelar** dismisses the modal with no changes.
+
+## Empty state
+
+When no departments match the active search or status filter, the list is replaced with a centred message:
+
+> No se encontraron departamentos — Intenta con otros filtros o términos de búsqueda

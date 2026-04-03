@@ -1,0 +1,105 @@
+---
+title: "Request history"
+description: "View and track the status of all your past requests"
+---
+
+The request history page lets every user review all the exit passes and absence justifications they have submitted, monitor their current status, view QR codes for approved passes, and edit or delete pending requests.
+
+Access the history at `/<role>/historial` — for example, `/trabajador/historial` for employees.
+
+---
+
+## Navigating the history
+
+The page is divided into two tabs:
+
+<Tabs>
+  <Tab title="Pases de Salida">
+    Shows all exit pass requests you have submitted. Each card displays the reason for the pass, the date, the departure time (if recorded), and the current status badge.
+
+    For approved passes that have not yet expired, a **Ver Código QR** button is shown. Tap it to open the QR code modal and present the code to the security guard.
+
+    For pending passes, **Editar** and **Eliminar** buttons are available.
+  </Tab>
+  <Tab title="Justificantes">
+    Shows all absence justification requests you have submitted. Each card displays the reason for the absence, the date, and the current status badge.
+
+    If a justification was rejected, the rejection reason is shown in a highlighted panel below the description, for example:
+
+    > **Motivo de rechazo:** La receta médica no tiene sello oficial.
+
+    For pending justifications, **Editar** and **Eliminar** buttons are available.
+  </Tab>
+</Tabs>
+
+---
+
+## Status badges
+
+Each request card displays a status badge indicating where the request stands in its lifecycle.
+
+| Badge | Color | Meaning |
+|---|---|---|
+| Pendiente | Yellow | The request has been submitted and is awaiting review by the administrator or area manager. |
+| Aprobado | Green | The request was approved. For exit passes, a QR code is available. |
+| Rechazado | Red | The request was rejected. The rejection reason is shown on the card. |
+| Usado | Gray | The approved exit pass QR code has been scanned by the security guard and the exit has been registered. |
+| Caducado | Orange | An approved exit pass whose return time has passed without being scanned. The QR code is no longer accessible. |
+
+---
+
+## Card information
+
+Each history card shows:
+
+- **Type icon** — a door icon for exit passes, a document icon for justifications.
+- **Title** — "Pase de Salida" or "Justificante".
+- **Status badge** — see the table above.
+- **Motivo** — the reason text entered when the request was submitted.
+- **Fecha** — the date of the pass or absence.
+- **Hora de salida** — the departure time, shown only for exit passes that include one.
+- **Motivo de rechazo** — shown only for rejected requests.
+
+---
+
+## Actions on pending requests
+
+When a request is in the **Pendiente** state you can modify or cancel it before it is reviewed.
+
+<AccordionGroup>
+  <Accordion title="Editing a pending request">
+    Click the **Editar** button on the card. An edit modal opens where you can update the request details. Save your changes to update the submission. Editing is only available while the request is pending — once a decision has been made, the edit button is no longer shown.
+  </Accordion>
+  <Accordion title="Deleting a pending request">
+    Click the **Eliminar** button on the card. A confirmation modal appears with the message:
+
+    > ¿Estás seguro? Esta acción eliminará tu solicitud de [tipo] y no se puede deshacer.
+
+    Click **Sí, eliminar** to permanently remove the request. Click the close button to cancel without making changes. Deletion is irreversible.
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Viewing a QR code
+
+QR codes are available for **Aprobado** exit passes that have not yet expired.
+
+<Steps>
+  <Step title="Open the Pases de Salida tab">
+    Select the **Pases de Salida** tab at the top of the history page.
+  </Step>
+  <Step title="Locate the approved pass">
+    Find the card with the green **Aprobado** badge.
+  </Step>
+  <Step title="Open the QR modal">
+    Click the **Ver Código QR** button. A modal opens displaying the unique QR code for that pass.
+  </Step>
+  <Step title="Present to the security guard">
+    Show the QR code on your screen to the guard at the exit point. Once scanned, the pass moves to **Usado** status.
+  </Step>
+</Steps>
+
+<Note>
+  The **Ver Código QR** button is hidden for passes in **Pendiente**, **Rechazado**, **Usado**, or **Caducado** states. It is only shown for active approved passes.
+</Note>

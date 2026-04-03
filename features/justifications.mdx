@@ -1,0 +1,104 @@
+---
+title: "Absence justifications (Justificantes)"
+description: "Submit a justification for an absence and attach evidence"
+---
+
+A justification (Justificante) is a formal record of an employee's absence from work. Employees submit a justification after missing a day, attach supporting evidence, and the request flows through an approval chain: first the area manager, then Human Resources.
+
+## Submitting a justification
+
+Navigate to your dashboard and click the **Justificante** card to open the form.
+
+<Steps>
+  <Step title="Verify your pre-filled information">
+    The top of the form shows your **Nombre Completo** and **Correo Institucional**. Both fields are read-only and pre-filled from your account profile.
+  </Step>
+  <Step title="Select the date of absence">
+    Choose the date you were absent from the **Fecha de Inasistencia** date picker.
+
+    The date selector enforces the following constraints:
+
+    - **Minimum date:** 3 business days (weekdays only) before today. Weekends are not counted.
+    - **Maximum date:** Yesterday (the current day cannot be selected, since a justification is submitted after the absence has occurred).
+
+    A note below the field confirms: _Límite: 3 días hábiles previos a hoy._
+  </Step>
+  <Step title="Describe the reason for absence">
+    Fill in the **Detalles del Justificante** textarea. Describe the cause of your absence — for example, an illness, family emergency, or medical appointment. A live character counter tracks your progress.
+  </Step>
+  <Step title="Attach evidence (recommended)">
+    Use the **Adjuntar evidencia** button to attach one or more files. Accepted formats are images (`image/*`), PDF, DOC, and DOCX. You can also use the camera icon to take a photo directly from a mobile device (this feature is coming soon).
+
+    Examples of useful evidence:
+
+    - Medical prescription (receta médica)
+    - Appointment confirmation (comprobante de cita)
+    - Any official document supporting the reason for absence
+
+    Attached files are listed below the upload area with their name and size in KB. You can remove any file by clicking the X button next to it.
+  </Step>
+  <Step title="Submit the request">
+    Click **Enviar Solicitud**. The system validates the form and, if everything is correct, records the justification and returns you to the previous screen.
+  </Step>
+</Steps>
+
+---
+
+## Form fields reference
+
+| Field | Editable | Required | Notes |
+|---|---|---|---|
+| Nombre Completo | No | — | Pre-filled; read-only |
+| Correo Institucional | No | — | Pre-filled; read-only |
+| Fecha de Inasistencia | Yes | Yes | Restricted to the last 3 business days |
+| Detalles del Justificante | Yes | Yes | 25–255 characters with live counter |
+| Archivos Adjuntos | Yes | No | Recommended; images, PDF, DOC, DOCX |
+
+---
+
+## Validation rules
+
+<Warning>
+  The **Detalles del Justificante** field requires a minimum of **25 characters**. Submitting with fewer characters blocks the form and displays:
+
+  ```
+  Debe tener al menos 25 caracteres
+  ```
+
+  The maximum is **255 characters**. Exceeding it shows:
+
+  ```
+  No puede exceder 255 caracteres
+  ```
+
+  The character counter turns red below 25, yellow above 200, and gray when within the valid range.
+</Warning>
+
+---
+
+## Approval workflow
+
+After submission, the justification follows a two-stage approval process:
+
+<Steps>
+  <Step title="Area manager review">
+    The justification is routed to the employee's direct area manager (jefe de área), who reviews the details and attached evidence and either approves or rejects the request. If rejected, the rejection reason is recorded and visible in the employee's history.
+  </Step>
+  <Step title="HR review">
+    Once the area manager approves the justification, it becomes visible to Human Resources (RH). HR can review approved justifications filtered by biweekly pay periods:
+
+    - **Primera quincena** — first fortnight of the month (days 1–15)
+    - **Segunda quincena** — second fortnight of the month (days 16–end)
+    - **Mes completo** — full month view
+  </Step>
+</Steps>
+
+<Tip>
+  Attaching evidence (a medical prescription, appointment confirmation, etc.) significantly speeds up the approval process. The tip is displayed directly on the form as a reminder.
+</Tip>
+
+---
+
+## Tracking your justification
+
+After submitting, your justification appears in your [request history](/features/request-history) under the **Justificantes** tab. You can monitor its status there and see any rejection reasons if the request was not approved.

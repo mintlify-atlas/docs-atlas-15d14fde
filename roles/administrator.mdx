@@ -1,0 +1,141 @@
+---
+title: "Administrator"
+description: "Full system access — manage users, departments, and all requests"
+---
+
+The Administrator is the highest-privilege role in JyPS. Administrators have access to every management panel in the system and can also participate in the regular request flow as if they were an employee.
+
+## Panel layout
+
+**Base route:** `/administrador`
+
+The administrator panel uses a persistent left sidebar (collapsible on mobile) with the following navigation items:
+
+| Nav item | Route | Component |
+|----------|-------|-----------|
+| Gestión de Usuarios | `/administrador` | `GestionUsuarios` |
+| Gestión de Departamentos | `/administrador/departamentos` | `GestionDepartamentos` |
+| Generar Solicitud | `/administrador/crear-solicitud` | `DashboardTrabajador` |
+| Historial | `/administrador/historial` | `Historial` |
+| Perfil | `/administrador/perfil` | `Perfil` |
+
+## User management
+
+The user management view (`/administrador`) is the index route for the administrator panel. It provides full CRUD access to all system accounts.
+
+### Statistics bar
+
+At the top of the page, three stat cards give a real-time count of:
+- **Total Usuarios** — all accounts in the system
+- **Usuarios Activos** — accounts currently enabled
+- **Usuarios Inactivos** — accounts that have been deactivated
+
+### Search and filters
+
+The filter panel combines a free-text search with status and department filters.
+
+- **Text search** — matches against `nombreCompleto`, `email`, or `rol`
+- **Status filter** — toggle buttons: Todos / Activos / Inactivos
+- **Department filter** — dropdown populated from the unique set of departments found in the user list
+
+All three filters apply simultaneously; results update on every keystroke or selection change.
+
+### User cards
+
+Each user is rendered as a card containing:
+
+- **Avatar** — first letter of full name, dark blue background
+- **Full name** and **role badge** (color-coded, see below)
+- **Department badge**
+- **Active / Inactive status badge** (green or red)
+- **Email** and **phone number**
+- **Edit button** — opens the `CrearUsuarioModal` in edit mode, pre-filled with the user's existing data
+- **Activate / Deactivate button** — shown conditionally based on current status
+
+### Role color codes
+
+Role badges use distinct colors to make it easy to scan role distribution at a glance:
+
+| Role value | Color |
+|-----------|-------|
+| `administrador` / `admin` | Red (`bg-red-200 text-red-700`) |
+| `jefe_de_departamento` / `jefe` | Purple (`bg-purple-200 text-purple-700`) |
+| `recursos_humanos` / `rh` | Green (`bg-green-200`) |
+| `empleado` / `usuario` | Blue (`bg-blue-200 text-blue-700`) |
+| `seguridad` | Amber (`text-amber-700`) |
+
+### Creating a user
+
+Clicking **Crear Usuario** opens the `CrearUsuarioModal`. The form collects all required fields and submits them to the API via the `crearUsuario` hook. On success, the user list reloads automatically.
+
+### Editing a user
+
+Clicking the edit icon on any user card opens the same modal in edit mode, pre-populated with that user's data. The form performs a `PUT` request to update the record.
+
+### Activating and deactivating accounts
+
+Each user card shows either a **Desactivar** button (red, for active accounts) or an **Activar** button (green, for inactive accounts).
+
+Clicking either button opens a `ConfirmModal` before any change is applied:
+
+<Tabs>
+  <Tab title="Deactivating an account">
+    - Modal title: **Confirmar Desactivación**
+    - Modal message: *¿Estás seguro de que quieres desactivar esta cuenta?*
+    - Modal type: `danger` (red confirm button)
+  </Tab>
+  <Tab title="Reactivating an account">
+    - Modal title: **Confirmar Activación**
+    - Modal message: *¿Estás seguro de que quieres reactivar esta cuenta?*
+    - Modal type: `success` (green confirm button)
+  </Tab>
+</Tabs>
+
+Confirming calls the API and the list refreshes to reflect the new state.
+
+## Department management
+
+The department management view (`/administrador/departamentos`) provides the same CRUD pattern applied to organizational units.
+
+### Statistics bar
+
+Three stat cards show:
+- **Total Departamentos**
+- **Activos** (green)
+- **Inactivos** (red)
+
+### Search and filters
+
+- **Text search** — matches against department `nombre` and `descripcion`
+- **Status filter** — toggle buttons: Todos / Activos / Inactivos
+
+### Department cards
+
+Each department card shows:
+- Department name
+- **Jefe** badge — the name of the assigned department head
+- **Trabajadores** badge — headcount
+- Active / Inactive status badge
+- **Edit button** — opens the form modal pre-filled with existing data
+- **Activate / Deactivate button** — same confirmation flow as user management
+
+### Creating or editing a department
+
+The form modal collects:
+- **Nombre del departamento** (required)
+- **Descripción** (required, free-text area)
+
+Cancelling or submitting closes the modal. The department list updates to reflect any changes.
+
+## Request access
+
+Administrators have the same request capabilities as employees. From the sidebar, navigating to **Generar Solicitud** loads the `DashboardTrabajador` component scoped to the `/administrador` base path. From there the administrator can navigate to:
+
+- `/administrador/solicitar-pase` — exit pass form
+- `/administrador/solicitar-justificante` — justification form
+
+See the [Employee](/roles/employee) page for form field details. The behavior and validation rules are identical regardless of which role submits the request.
+
+<Info>
+All requests submitted by an administrator appear in their personal history at `/administrador/historial` and follow the same approval workflow as any other employee request.
+</Info>

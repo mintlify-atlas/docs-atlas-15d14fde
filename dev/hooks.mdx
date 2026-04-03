@@ -1,0 +1,267 @@
+---
+title: "Custom hooks"
+description: "The useApi and useUsuarios hooks that power JyPS"
+---
+
+JyPS data fetching is handled by two hooks that form a deliberate two-layer stack: `useApi` is the low-level HTTP transport, and `useUsuarios` is the domain layer built on top of it.
+
+<Tip>
+  Both domain hooks (`useUsuarios` and any future domain hook) follow the same error-return pattern: instead of throwing on failure, they catch the error and return `{ exito: false, mensaje: err.message }`. This keeps component-level error handling simple — components only need to check `result.exito` rather than wrapping calls in `try/catch`.
+</Tip>
+
+---
+
+## `useApi`
+
+**File:** `src/hooks/useApi.js`
+
+The infrastructure layer. Wraps the browser `fetch` API with consistent headers, loading state, and error normalization.
+
+### Source
+
+```javascript src/hooks/useApi.js
+import { useState, useCallback } from 'react';
+
+// Fallback de seguridad
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://yolonda-otocystic-personably.ngrok-free.dev/api/v1';
+
+export const useApi = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const request = useCallback(async (endpoint, method = 'GET', body = null) => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            };
+
+            const config = { method, headers };
+
+            if (body) {
+                config.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${BASE_URL}${endpoint}`, config);
+            
+            // Nuestra solución anti-errores 201
+            const text = await response.text();
+            
+            let data = {};
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = { message: text };
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || `Error HTTP: ${response.status}`);
+            }
+
+            return data;
+            
+        } catch (err) {
+            setError(err.message);
+            throw err; 
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    return { request, isLoading, error };
+};
+```
+
+### Return value
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `request` | `async function` | Sends an HTTP request. Stable reference (memoized with `useCallback`). |
+| `isLoading` | `boolean` | `true` from the moment a request starts until it resolves or rejects. |
+| `error` | `string \| null` | The error message from the last failed request, or `null` if the last request succeeded or no request has been made yet. Cleared automatically at the start of every new request. |
+
+### `request(endpoint, method, body)`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `endpoint` | `string` | required | Path appended to `BASE_URL`, e.g. `'/usuarios'` |
+| `method` | `string` | `'GET'` | HTTP method: `'GET'`, `'POST'`, `'PUT'`, `'DELETE'`, etc. |
+| `body` | `object \| null` | `null` | Request body. Serialized to JSON automatically. Omitted from the request when `null`. |
+
+### Behavior notes
+
+- **Headers**: Every request includes `Content-Type: application/json` and `ngrok-skip-browser-warning: true`. The ngrok header suppresses the browser warning page when the backend is exposed via an ngrok tunnel.
+- **Response parsing**: The response body is always read as text first (via `response.text()`), then parsed as JSON if non-empty. This avoids a crash on `201 Created` responses that have no body — the backend may return HTTP 201 with an empty body, which `response.json()` would throw on.
+- **Error handling**: If `response.ok` is `false`, an `Error` is thrown using `data.message`, `data.error`, or a generic `Error HTTP: <status>` string. The error is also written to the `error` state before being re-thrown, so the caller and any component observing `error` both see it.
+
+### Usage
+
+```javascript
+const { request, isLoading, error } = useApi();
+
+// GET request
+const data = await request('/usuarios', 'GET');
+
+// POST request
+const result = await request('/usuarios', 'POST', {
+  nombre: 'Juan',
+  apellidoPaterno: 'García',
+  correo: 'juan@example.com',
+});
+
+// Reading state in JSX
+if (isLoading) return <p>Cargando...</p>;
+if (error) return <p>Error: {error}</p>;
+```
+
+---
+
+## `useUsuarios`
+
+**File:** `src/hooks/useUsuarios.js`
+
+The user domain layer. Calls `useApi` internally and maps raw backend responses into the shape the view layer expects.
+
+### Source
+
+```javascript src/hooks/useUsuarios.js
+import { useApi } from './useApi';
+
+export const useUsuarios = () => {
+
+    const { request, isLoading } = useApi();
+
+    //POST
+    const crearUsuario = async (formData) => {
+        try {
+            //JSON
+            const payload = {
+                nombre: formData.nombre,
+                apellidoPaterno: formData.apellidoPaterno,
+                apellidoMaterno: formData.apellidoMaterno,
+                correo: formData.correo,
+                telefono: formData.telefono,
+                horaEntrada: `${formData.horaEntrada}:00`,
+                horaSalida: `${formData.horaSalida}:00`,
+                roles: formData.roles,
+                departamentoId: Number(formData.departamentoId) 
+            };
+            const respuesta = await request('/usuarios', 'POST', payload);
+            return { exito: true, data: respuesta };
+            
+        } catch (err) {
+            console.error("Error en useUsuarios:", err);
+            return { exito: false, mensaje: err.message };
+        }
+    };
+
+    //GET
+    const obtenerUsuarios = async () => {
+        try {
+            const respuesta = await request('/usuarios', 'GET');
+
+            // Verificamos
+            const usuariosBackend = Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+
+            const usuariosFormateados = usuariosBackend.map(user => ({
+                id: user.id || Math.random().toString(),
+                nombreCompleto: user.nombreCompleto,
+                email: user.correo,
+                rol: user.roles && user.roles.length > 0 ? user.roles[0].toLowerCase() : 'sin_rol',
+                //Departamento  
+                departamento: user.departamento ? user.departamento.nombre : `Depto ${user.departamentoId}`,
+                telefono: user.telefono,
+                isActive: user.estatus !== undefined ? user.estatus : true 
+            }));
+
+            return { exito: true, data: usuariosFormateados };
+
+        } catch (err) {
+            console.error("Error en useUsuarios (obtener):", err);
+            return { exito: false, mensaje: err.message };
+        }
+    };
+
+    return { 
+        crearUsuario,
+        obtenerUsuarios, 
+        isLoading 
+    };
+};
+```
+
+### Return value
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `crearUsuario` | `async function` | Creates a user via `POST /usuarios`. |
+| `obtenerUsuarios` | `async function` | Fetches and maps all users via `GET /usuarios`. |
+| `isLoading` | `boolean` | Proxied from the underlying `useApi` instance. |
+
+### `crearUsuario(formData)`
+
+Builds a typed payload from `formData` and sends it to `POST /usuarios`.
+
+**`formData` fields consumed:**
+
+| Field | Transformation |
+|-------|---------------|
+| `nombre`, `apellidoPaterno`, `apellidoMaterno` | Passed through |
+| `correo` | Passed through |
+| `telefono` | Passed through |
+| `horaEntrada` | Appended with `:00` → e.g. `"08:00"` becomes `"08:00:00"` |
+| `horaSalida` | Same as `horaEntrada` |
+| `roles` | Passed through (array) |
+| `departamentoId` | Coerced to `Number` |
+
+**Returns:** `{ exito: true, data: <backend response> }` on success, `{ exito: false, mensaje: <error string> }` on failure.
+
+### `obtenerUsuarios()`
+
+Fetches all users and maps the backend representation to the client-side shape.
+
+**Backend → client field mapping:**
+
+| Backend field | Client field | Notes |
+|---------------|-------------|-------|
+| `user.id` | `id` | Falls back to `Math.random().toString()` if absent |
+| `user.nombreCompleto` | `nombreCompleto` | Passed through |
+| `user.correo` | `email` | Renamed |
+| `user.roles[0]` | `rol` | First role, lowercased. Defaults to `'sin_rol'` if empty |
+| `user.departamento.nombre` | `departamento` | Falls back to `Depto <departamentoId>` if no nested object |
+| `user.telefono` | `telefono` | Passed through |
+| `user.estatus` | `isActive` | Renamed. Defaults to `true` if `undefined` |
+
+**Returns:** `{ exito: true, data: User[] }` on success, `{ exito: false, mensaje: <error string> }` on failure.
+
+### Usage
+
+```javascript
+const { crearUsuario, obtenerUsuarios, isLoading } = useUsuarios();
+
+// Fetch and display users
+const handleCargar = async () => {
+  const result = await obtenerUsuarios();
+  if (result.exito) {
+    setUsuarios(result.data);
+  } else {
+    setMensajeError(result.mensaje);
+  }
+};
+
+// Create a new user
+const handleCrear = async (formData) => {
+  const result = await crearUsuario(formData);
+  if (result.exito) {
+    // user created, refresh list
+    await handleCargar();
+  } else {
+    setMensajeError(result.mensaje);
+  }
+};
+```

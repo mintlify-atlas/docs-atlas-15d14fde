@@ -1,0 +1,108 @@
+---
+title: "QR code validation"
+description: "How security guards validate exit passes using QR codes"
+---
+
+The **Validación de Pases** screen is used by security guards (`seguridad` role) at the facility checkpoint. A guard enters the authorization code provided by an employee and the system immediately shows whether the pass is valid and what action to take.
+
+## The validation panel
+
+The main panel centres around a single large input field and a submit button.
+
+### Authorization code input
+
+- **Label:** Código de Autorización
+- **Format:** Uppercase alphanumeric (example: `GDKF64NC`)
+- **Appearance:** Centred text, monospace font, extra-wide letter spacing (`tracking-widest`), 56 px height
+- Characters are automatically converted to uppercase as the guard types, so case does not matter when entering a code
+
+### Verify button
+
+The **Verificar Código** button submits the form. The code is looked up against the backend (mock data is used in the current demo build). If the code is not found, an alert is shown and the result card is cleared.
+
+<Note>
+The following codes work in the demo build:
+
+- `GDKF64NC` — valid exit pass (state: `aprobado`)
+- `REGRESO123` — valid return pass (state: `en_curso`)
+</Note>
+
+## Pass states and result card
+
+After a valid code is entered, a result card slides in below the input panel. The card's border and content change depending on the pass state.
+
+### aprobado — valid for exit
+
+The employee has an approved pass and has not yet left the facility.
+
+- **Header icon:** Green `CheckCircle`
+- **Header title:** "Pase Válido para Salida"
+- **Exit time field:** Populated with the current time at the moment of lookup (`getCurrentTime()`)
+- **Return selector:** A yellow dropdown asking whether the employee will return (see [return selector](#return-selector) below)
+- **Action button:** Green **Registrar Salida** button
+
+### en_curso — valid for return entry
+
+The employee left earlier and is now returning to the facility.
+
+- **Header icon:** Green `CheckCircle`
+- **Header title:** "Pase Válido para Entrada"
+- **Exit time field:** Shows the exit time that was recorded when the pass was first used
+- **Return time field:** Populated with the current time at the moment of lookup (`horaRegreso`)
+- **Action button:** Blue **Registrar Entrada de Regreso** button
+
+### completado — expired / cannot be reused
+
+The pass has completed its full lifecycle and is no longer valid.
+
+- **Header icon:** Red `XCircle`
+- **Header title:** "Pase Expirado / No Válido"
+- **Card border:** Red
+- **Footer:** Red warning box reading "Este pase ya cumplió su ciclo y no puede volver a usarse."
+- No action button is shown
+
+## Result card fields
+
+The card always shows a worker information block and a grid of time/date fields.
+
+### Worker block
+
+| Field | Content |
+|---|---|
+| Trabajador | Employee full name |
+| Email | Employee email address |
+
+### Date and time grid
+
+| Field | Shown when |
+|---|---|
+| Fecha | Always — formatted as `DD/MM/YYYY` (`es-MX` locale) |
+| Hora de Salida | Always — the current system time for `aprobado`; the previously recorded exit time for `en_curso` |
+| Hora de Regreso | Only when `horaRegreso` is set (i.e., `en_curso` state) — shown in blue |
+
+## Return selector
+
+When a pass is in the `aprobado` state, a yellow panel appears between the time fields and the action button.
+
+**Label:** "¿El trabajador regresará a las instalaciones?"
+
+| Option value | Display label |
+|---|---|
+| `si` | SI |
+| `no` | NO, termino de turno |
+
+The selected value is sent alongside the exit registration. If the employee will not return (`no`), the pass transitions directly to `completado` after the exit is recorded.
+
+## State summary
+
+<AccordionGroup>
+  <Accordion title="aprobado">
+    The pass has been approved by a manager. The employee is still inside the facility. The guard registers the exit, records the current time as `horaSalida`, and selects whether the employee will return.
+  </Accordion>
+  <Accordion title="en_curso">
+    The employee left and is expected to return. The guard validates the same code on the employee's return, records the return time as `horaRegreso`, and registers the entry.
+  </Accordion>
+  <Accordion title="completado">
+    The pass cycle is finished. The code can no longer be used. This state is reached either after a return entry is registered, or after an exit is registered with `isReturning: "no"`.
+  </Accordion>
+</AccordionGroup>

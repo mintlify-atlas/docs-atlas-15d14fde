@@ -1,0 +1,96 @@
+---
+title: "Installation"
+description: "Set up JyPS locally for development"
+---
+
+## Prerequisites
+
+Before cloning JyPS, make sure you have the following installed:
+
+- **Node.js** v18 or later (the project uses Vite 7 and React 19, which require a modern Node)
+- **npm**, **yarn**, or **pnpm** — any one package manager is sufficient
+- **Git**
+
+## Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/ingeniumSDS/JyPS-Front-Web.git
+    cd JyPS-Front-Web
+    ```
+  </Step>
+
+  <Step title="Install dependencies">
+    <CodeGroup>
+      ```bash npm
+      npm install
+      ```
+
+      ```bash yarn
+      yarn install
+      ```
+
+      ```bash pnpm
+      pnpm install
+      ```
+    </CodeGroup>
+
+    This installs React 19, React Router 7, Tailwind CSS 4, Lucide React, and all other dependencies declared in `package.json`.
+  </Step>
+
+  <Step title="Configure environment variables">
+    Create a `.env` file in the project root and set the API base URL:
+
+    ```bash .env
+    VITE_API_BASE_URL=https://your-backend-url/api/v1
+    ```
+
+    See [Environment variables](/dev/environment-variables) for a full description of every variable and how the fallback works.
+  </Step>
+
+  <Step title="Start the development server">
+    ```bash
+    npm run dev
+    ```
+
+    Vite starts a local dev server. The app is available at **http://localhost:5173**.
+
+    Hot Module Replacement (HMR) is enabled by default — changes to source files reflect immediately in the browser without a full reload.
+  </Step>
+</Steps>
+
+## Available scripts
+
+| Script | Command | Description |
+|--------|---------|-------------|
+| `dev` | `npm run dev` | Start the Vite development server with HMR |
+| `build` | `npm run build` | Compile and bundle for production into `dist/` |
+| `preview` | `npm run preview` | Serve the production build locally for verification |
+| `lint` | `npm run lint` | Run ESLint across all `.js` and `.jsx` files |
+
+## Production build
+
+```bash
+npm run build
+```
+
+Vite outputs the optimized bundle to `dist/`. To verify the build before deploying:
+
+```bash
+npm run preview
+```
+
+This serves `dist/` at **http://localhost:4173** using Vite's built-in preview server.
+
+## ngrok tunnels (development)
+
+The Vite server is pre-configured to accept requests from ngrok tunnels, so the app can be exposed to external devices during development:
+
+```javascript vite.config.js
+server: {
+  allowedHosts: ['.ngrok-free.dev', '.ngrok-free.app'],
+}
+```
+
+This means you can run `ngrok http 5173` and share the tunnel URL with teammates or test on mobile without additional config changes.

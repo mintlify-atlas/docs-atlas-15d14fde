@@ -1,0 +1,83 @@
+{
+  "projectType": "saas",
+  "projectName": "JyPS - Sistema de Justificantes y Pases de Salida",
+  "projectDescription": "A role-based web SPA for managing employee exit passes and absence justifications, with approval workflows and QR code validation for institutional access control.",
+  "theme": "almond",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Overview",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "architecture"]
+          },
+          {
+            "group": "User Roles",
+            "pages": ["roles/overview", "roles/administrator", "roles/area-manager", "roles/hr", "roles/employee", "roles/security-guard"]
+          }
+        ]
+      },
+      {
+        "tab": "Features",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": ["features/login", "features/password-recovery"]
+          },
+          {
+            "group": "Requests",
+            "pages": ["features/exit-passes", "features/justifications", "features/request-history"]
+          },
+          {
+            "group": "Administration",
+            "pages": ["features/user-management", "features/department-management", "features/approvals"]
+          },
+          {
+            "group": "QR Validation",
+            "pages": ["features/qr-validation", "features/entry-exit-logging"]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Setup & Configuration",
+            "pages": ["dev/installation", "dev/environment-variables"]
+          },
+          {
+            "group": "Codebase",
+            "pages": ["dev/project-structure", "dev/hooks", "dev/components"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Role-based access control with five distinct user panels (Administrator, Area Manager, HR, Employee, Security Guard)",
+    "Exit pass request and approval workflow with QR code generation",
+    "Absence justification submission and HR review system",
+    "Real-time multi-criteria filtering for users and requests",
+    "QR code scanning and manual code validation for physical access control",
+    "Account lockout security after failed login attempts",
+    "Responsive SPA design built with React 19 and Tailwind CSS 4",
+    "Clean Architecture pattern with separated view, domain, and infrastructure layers"
+  ],
+  "publicApiSurface": [
+    "useApi() — centralized HTTP hook: request(endpoint, method, body)",
+    "useUsuarios() — user domain hook: crearUsuario(formData), obtenerUsuarios()",
+    "GET /api/v1/usuarios — list all users",
+    "POST /api/v1/usuarios — create a new user",
+    "Route /administrador — administrator panel",
+    "Route /trabajador — employee panel",
+    "Route /recursos-humanos — HR panel",
+    "Route /jefe-area — area manager panel",
+    "Route /guardia — security guard panel",
+    "Route /login — authentication page",
+    "Route /recuperar — password recovery page"
+  ]
+}

@@ -1,0 +1,180 @@
+---
+title: "User management"
+description: "Create, edit, and manage user accounts as an administrator"
+---
+
+The **Gestión de Usuarios** screen is available exclusively to users with the `administrador` role. It provides a full lifecycle view of every account in the system, with inline filtering, status toggling, and a modal-based create/edit workflow.
+
+## Dashboard statistics
+
+Three summary cards appear at the top of the page to give an at-a-glance overview before you interact with any filters.
+
+<CardGroup cols={3}>
+  <Card title="Total Usuarios" icon="users">
+    Total number of accounts in the system, regardless of status.
+  </Card>
+  <Card title="Usuarios Activos" icon="user-check">
+    Accounts with `isActive: true`. Shown in green.
+  </Card>
+  <Card title="Usuarios Inactivos" icon="user-x">
+    Accounts with `isActive: false`. Shown in red.
+  </Card>
+</CardGroup>
+
+## Filtering users
+
+A search bar and two filter controls sit above the user list. All three operate simultaneously — only users that match every active filter are shown.
+
+### Search bar
+
+The text input matches against three fields in real time:
+
+- Full name (`nombreCompleto`)
+- Email address (`email`)
+- Role (`rol`)
+
+### Status filter
+
+Three toggle buttons let you narrow the list by account status:
+
+| Button | Behaviour |
+|---|---|
+| **Todos** | Shows all users (default) |
+| **Activos** | Shows only users where `isActive` is `true` |
+| **Inactivos** | Shows only users where `isActive` is `false` |
+
+The active button is highlighted in navy (`#0F2C59`).
+
+### Department dropdown
+
+A `<select>` element is populated dynamically from the unique department values present in the current user list. Selecting a department limits the list to users assigned to that department. The default option is **Todos los departamentos**.
+
+## User cards
+
+Each user is rendered as a card in a single-column grid. The card contains:
+
+- **Avatar** — a navy circle displaying the first letter of the user's full name in uppercase
+- **Full name** — displayed as the card heading
+- **Role badge** — colour-coded pill (see [role colours](#role-colour-coding) below), with underscores replaced by spaces
+- **Department badge** — grey pill with a building icon; shows "Sin departamento" if no department is assigned
+- **Status badge** — green `Activo` or red `Inactivo` indicator with a matching icon
+- **Email** — shown with a mail icon in the contact row
+- **Phone number** — shown with a phone icon; shows "Sin teléfono" if not set
+
+### Role colour coding
+
+| Role value | Badge colour |
+|---|---|
+| `administrador`, `admin` | Red (`bg-red-200 text-red-700`) |
+| `jefe_de_departamento`, `jefe` | Purple (`bg-purple-200 text-purple-700`) |
+| `recursos_humanos`, `rh` | Green (`bg-green-200`) |
+| `empleado`, `usuario` | Blue (`bg-blue-200 text-blue-700`) |
+| `seguridad` | Amber (`text-amber-700`) |
+| Any other value | Slate (`bg-slate-100 text-slate-700`) |
+
+## Creating a user
+
+Click the green **Crear Usuario** button in the page header to open the creation modal.
+
+<Steps>
+  <Step title="Fill in personal data">
+    The **Datos Personales** section contains:
+
+    | Field | Type | Validation |
+    |---|---|---|
+    | Nombre | Text | Required; minimum 3 characters; letters only |
+    | Apellido Paterno | Text | Required; minimum 3 characters; letters only |
+    | Apellido Materno | Text | Required; minimum 3 characters; letters only |
+    | Teléfono | Tel | Required; exactly 10 digits (non-numeric characters are stripped automatically) |
+    | Email (correo) | Email | Required; must end with `@utez.edu.mx` |
+  </Step>
+  <Step title="Assign roles">
+    The **Roles y Asignaciones** section shows five checkboxes. At least one role must be selected.
+
+    | Checkbox label | Internal value |
+    |---|---|
+    | Administrador | `ADMINISTRADOR` |
+    | Recursos Humanos | `RECURSOS_HUMANOS` |
+    | Jefe de Departamento | `JEFE_DEPARTAMENTO` |
+    | Empleado | `EMPLEADO` |
+    | Guardia de Seguridad | `GUARDIA` |
+
+    Multiple roles can be selected simultaneously.
+  </Step>
+  <Step title="Select a department (conditional)">
+    The department dropdown appears only when at least one of these roles is checked: `EMPLEADO`, `ADMINISTRADOR`, `RECURSOS_HUMANOS`, or `JEFE_DEPARTAMENTO`. It is required whenever visible.
+  </Step>
+  <Step title="Set work schedule (conditional)">
+    Two time pickers appear alongside the department dropdown for the same role conditions:
+
+    - **Hora Inicio Jornada** — defaults to `08:00`
+    - **Hora Fin Jornada** — defaults to `16:00`; must be strictly later than the start time
+
+    The system validates that end time is after start time in real time.
+  </Step>
+  <Step title="Submit">
+    Click **Crear Usuario**. The button is disabled while any validation error is active. On success, the modal closes and the user list reloads automatically.
+  </Step>
+</Steps>
+
+<Info>
+When a new account is created the system generates a password automatically and sends it to the user's institutional email address. You do not set the password manually.
+</Info>
+
+### API payload
+
+The `useUsuarios` hook sends the following JSON body to `POST /api/v1/usuarios`:
+
+```javascript
+{
+  nombre: formData.nombre,
+  apellidoPaterno: formData.apellidoPaterno,
+  apellidoMaterno: formData.apellidoMaterno,
+  correo: formData.correo,
+  telefono: formData.telefono,
+  horaEntrada: `${formData.horaEntrada}:00`,   // e.g. "08:00:00"
+  horaSalida: `${formData.horaSalida}:00`,      // e.g. "16:00:00"
+  roles: formData.roles,                         // array of role strings
+  departamentoId: Number(formData.departamentoId)
+}
+```
+
+Note that seconds (`:00`) are appended to both time values before the request is sent.
+
+## Editing a user
+
+Click the **pencil icon** button on any user card to open the same modal in edit mode. The modal title changes to **Editar Usuario** and all fields are pre-filled with the existing account data:
+
+- The full name is split on spaces to populate `nombre`, `apellidoPaterno`, and `apellidoMaterno`
+- `horaEntrada` and `horaSalida` are trimmed to `HH:MM` (the trailing `:00` is stripped)
+- `roles` is populated from `rolesOriginales` if available, otherwise from the normalised `rol` field
+
+<Warning>
+The PUT endpoint is not yet connected to the backend. Submitting the edit form currently logs the payload to the console and shows a confirmation alert. The user list is **not** refreshed after an edit until the PUT integration is complete.
+</Warning>
+
+## Activating and deactivating accounts
+
+Each user card displays either a **Desactivar** button (for active users, red border) or an **Activar** button (for inactive users, green border).
+
+Clicking either button opens a confirmation modal before any change is made.
+
+### Confirmation modal behaviour
+
+| Action | Modal type | Icon | Confirm button |
+|---|---|---|---|
+| Deactivate | `danger` | Red alert circle | Red "Desactivar" button |
+| Activate | `success` | Green check circle | Green "Activar" button |
+
+The modal message reads:
+
+- **Deactivate:** "¿Estás seguro de que quieres desactivar esta cuenta?"
+- **Activate:** "¿Estás seguro de que quieres reactivar esta cuenta?"
+
+Clicking **Cancelar** closes the modal with no changes. Clicking the confirm button executes the status change via the API.
+
+## Empty state
+
+When no users match the active filters, the list area is replaced with a centred empty state showing a users icon and the message:
+
+> No se encontraron usuarios — Intenta con otros filtros o términos de búsqueda

@@ -1,0 +1,506 @@
+---
+title: "UI components"
+description: "Reusable components in the JyPS component library"
+---
+
+All shared components live in `src/components/`. They are pure presentational pieces — no data fetching, no routing — and accept their data and callbacks exclusively through props.
+
+<Tabs>
+  <Tab title="Button">
+    ## Button
+
+    **File:** `src/components/Button.jsx`
+
+    A styled submit/action button built on the native `<button>` element. Supports a full-width or inline layout and a disabled appearance.
+
+    ### Source
+
+    ```jsx src/components/Button.jsx
+    export function Button({ children, type = "button", onClick, disabled = false, className = "", fullWidth = true }) {
+        return (
+        <button
+            type={type}
+            onClick={onClick}
+            disabled={disabled}
+            className={`
+            px-4 py-2.5 rounded-lg font-medium text-white transition-all duration-200 flex items-center justify-center
+            ${fullWidth ? "w-full" : "w-auto"}
+            ${disabled 
+                ? "bg-gray-400 cursor-not-allowed" 
+                : "bg-[#0F2C59] hover:bg-[#163b75] active:scale-[0.98] shadow-md hover:shadow-lg"
+            }
+            ${className}
+            `}
+        >
+            {children}
+        </button>
+        );
+    }
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `children` | `ReactNode` | required | Button label or content |
+    | `type` | `string` | `"button"` | Native button type: `"button"`, `"submit"`, or `"reset"` |
+    | `onClick` | `function` | — | Click handler |
+    | `disabled` | `boolean` | `false` | Disables the button and renders it gray with `cursor-not-allowed` |
+    | `fullWidth` | `boolean` | `true` | When `true`, the button stretches to fill its container (`w-full`). Set to `false` for inline/auto-width buttons. |
+    | `className` | `string` | `""` | Additional Tailwind classes merged onto the element |
+
+    ### Usage
+
+    ```jsx
+    // Full-width submit button (default)
+    <Button type="submit" disabled={isLoading}>
+      Iniciar sesión
+    </Button>
+
+    // Inline action button
+    <Button fullWidth={false} onClick={handleEditar}>
+      Editar
+    </Button>
+
+    // Disabled while loading
+    <Button disabled={isLoading}>
+      {isLoading ? 'Guardando...' : 'Guardar cambios'}
+    </Button>
+    ```
+  </Tab>
+
+  <Tab title="Card">
+    ## Card
+
+    **File:** `src/components/Card.jsx`
+
+    A simple white container with a rounded border and drop shadow. Used throughout the app to group related content — form panels, user list items, dashboard widgets.
+
+    ### Source
+
+    ```jsx src/components/Card.jsx
+    export function Card({ children, className = "", onClick }) {
+        return (
+        <div 
+        className={`bg-white rounded-lg shadow-lg border-gray-100  ${className}`}
+        onClick={onClick}
+        >
+            {children}
+        </div>
+        );
+    }
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `children` | `ReactNode` | required | Content rendered inside the card |
+    | `className` | `string` | `""` | Additional classes for padding, width, margin, etc. |
+    | `onClick` | `function` | — | Optional click handler. Useful for clickable list-item cards. |
+
+    ### Usage
+
+    ```jsx
+    // Basic content container
+    <Card className="p-6">
+      <h2>Gestión de Usuarios</h2>
+      <p>...</p>
+    </Card>
+
+    // Clickable card (e.g. a selectable list item)
+    <Card className="p-4 cursor-pointer hover:shadow-xl" onClick={() => seleccionar(usuario)}>
+      <p>{usuario.nombreCompleto}</p>
+    </Card>
+    ```
+  </Tab>
+
+  <Tab title="Input">
+    ## Input
+
+    **File:** `src/components/Input.jsx`
+
+    A labeled text input built with `forwardRef`, so it can receive a `ref` from parent form logic (e.g., for focus management or React Hook Form). Renders an optional label, the `<input>`, and an optional inline error message.
+
+    ### Source
+
+    ```jsx src/components/Input.jsx
+    import { forwardRef } from 'react';
+
+    export const Input = forwardRef(({ label, error, className = '', ...props }, ref) => {
+        return (
+        <div className="w-full">
+            {label && (
+            <label className="block mb-2 font-medium text-gray-700">
+                {label}
+            </label>
+            )}
+            
+            <input
+            ref={ref}
+            className={`w-full px-4 py-3 border rounded-lg transition-colors duration-200 outline-none
+                ${error 
+                ? 'border-[#DC3545] focus:border-[#DC3545] focus:ring-2 focus:ring-red-100' 
+                : 'border-gray-300 focus:border-[#0F2C59] focus:ring-2 focus:ring-blue-100'
+                }
+                disabled:bg-gray-100 disabled:cursor-not-allowed
+                ${className}`}
+            {...props}
+            />
+            {error && (
+            <p className="mt-1 text-sm text-[#DC3545]">{error}</p>
+            )}
+        </div>
+        );
+    });
+
+    Input.displayName = 'Input';
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `label` | `string` | — | Label text rendered above the input. Omitted if not provided. |
+    | `error` | `string` | — | Validation error message. When set, the border turns red and the message appears below the input. |
+    | `className` | `string` | `""` | Additional classes applied to the `<input>` element |
+    | `...props` | — | — | All other props (`type`, `placeholder`, `value`, `onChange`, `required`, `disabled`, etc.) are spread directly onto the native `<input>` |
+
+    <Note>
+      Because `Input` uses `forwardRef`, you can attach a `ref` to it for imperative focus control or for use with libraries like React Hook Form.
+    </Note>
+
+    ### Usage
+
+    ```jsx
+    // Basic controlled input
+    <Input
+      label="Correo electrónico"
+      type="email"
+      placeholder="usuario@empresa.com"
+      value={correo}
+      onChange={(e) => setCorreo(e.target.value)}
+      required
+    />
+
+    // With validation error
+    <Input
+      label="Nombre"
+      value={nombre}
+      onChange={(e) => setNombre(e.target.value)}
+      error={errores.nombre}
+    />
+
+    // Disabled field
+    <Input
+      label="ID de empleado"
+      value={empleadoId}
+      disabled
+    />
+    ```
+  </Tab>
+
+  <Tab title="Modal">
+    ## Modal
+
+    **File:** `src/components/Modal.jsx`
+
+    A full-screen overlay modal with a semi-transparent backdrop, a sticky header with title and close button, and a scrollable content area. Uses Lucide's `X` icon for the close button.
+
+    Locks body scroll while open (`document.body.style.overflow = 'hidden'`) and restores it on close or unmount.
+
+    ### Source
+
+    ```jsx src/components/Modal.jsx
+    import { useEffect } from "react";
+    import { X } from "lucide-react";
+
+    export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
+       // Bloqueamos el scrol del fondo
+        useEffect(()=>{
+            if(isOpen){
+                document.body.style.overflow = 'hidden';
+            }else{
+                document.body.style.overflow = 'unset';
+            }return()=> {
+                document.body.style.overflow = 'unset';
+            };
+        }, [isOpen]);
+
+        if (!isOpen) return null;
+
+        // Responsivo
+        const sizeClasses = {
+        sm: 'max-w-md',
+        md: 'max-w-lg',
+        lg: 'max-w-2xl',
+        xl: 'max-w-4xl'
+        };
+
+        return (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div 
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity cursor-pointer"
+            onClick={onClose}
+            />
+            <div className="flex min-h-full items-center justify-center p-4">
+            <div className={`relative bg-white rounded-2xl shadow-xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200`}>
+                {title && (
+                <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100 sticky top-0 bg-white z-10 rounded-t-2xl">
+                    <h2 className="text-xl font-bold text-[#0F2C59]">{title}</h2>
+                    <button
+                    onClick={onClose}
+                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                    title="Cerrar"
+                    >
+                    <X size={20} />
+                    </button>
+                </div>
+                )}
+                <div className="p-4 sm:p-6 overflow-y-auto">
+                {children}
+                </div>
+            </div>
+            </div>
+        </div>
+       );
+    }
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `isOpen` | `boolean` | required | Controls visibility. When `false`, the component renders nothing. |
+    | `onClose` | `function` | required | Called when the user clicks the backdrop or the `X` button |
+    | `title` | `string` | — | Title shown in the sticky header. Header is omitted entirely if not provided. |
+    | `children` | `ReactNode` | required | Content rendered in the scrollable body |
+    | `size` | `'sm' \| 'md' \| 'lg' \| 'xl'` | `'md'` | Controls the modal's maximum width |
+
+    ### Size variants
+
+    | Value | Max width |
+    |-------|----------|
+    | `sm` | `max-w-md` (448px) |
+    | `md` | `max-w-lg` (512px) — default |
+    | `lg` | `max-w-2xl` (672px) |
+    | `xl` | `max-w-4xl` (896px) |
+
+    ### Usage
+
+    ```jsx
+    const [modalAbierto, setModalAbierto] = useState(false);
+
+    <Button onClick={() => setModalAbierto(true)}>
+      Crear usuario
+    </Button>
+
+    <Modal
+      isOpen={modalAbierto}
+      onClose={() => setModalAbierto(false)}
+      title="Crear nuevo usuario"
+      size="lg"
+    >
+      <CrearUsuarioForm onSuccess={() => setModalAbierto(false)} />
+    </Modal>
+    ```
+  </Tab>
+
+  <Tab title="PasswordInput">
+    ## PasswordInput
+
+    **File:** `src/components/PasswordInput.jsx`
+
+    A password field with a built-in show/hide toggle. Manages its own `showPassword` boolean state and switches the underlying `<input>` between `type="password"` and `type="text"`. Uses Lucide's `Eye` / `EyeOff` icons for the toggle button. Built with `forwardRef`.
+
+    ### Source
+
+    ```jsx src/components/PasswordInput.jsx
+    import { useState, forwardRef } from 'react';
+    import { Eye, EyeOff } from 'lucide-react';
+
+    export const PasswordInput = forwardRef(({ label, placeholder, error, ...props }, ref) => {
+        const [showPassword, setShowPassword] = useState(false);
+
+        return (
+        <div className="flex flex-col gap-1 w-full mb-4 relative">
+            {label && 
+            <label className="block mb-2 font-medium text-gray-700">
+                {label}
+            </label>
+            }
+
+            <div className="relative">
+            <input
+                ref={ref}
+                type={showPassword ? "text" : "password"}
+                placeholder={placeholder}
+                className={`w-full px-4 py-3 pr-12 border rounded-lg outline-none transition-all duration-200 
+                ${error 
+                    ? "border-red-500 focus:ring-2 focus:ring-red-200" 
+                    : "border-gray-300 focus:border-[#0F2C59] focus:ring-2 focus:ring-blue-100" 
+                }
+                `}
+                {...props}
+            />
+            <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0F2C59] transition-colors"
+            >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+            </div>
+
+            {error && <span className="text-xs text-red-500 font-medium">{error}</span>}
+        </div>
+      );
+    });
+
+    PasswordInput.displayName = 'PasswordInput';
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `label` | `string` | — | Label text rendered above the field |
+    | `placeholder` | `string` | — | Placeholder text inside the input |
+    | `error` | `string` | — | Validation error message rendered below the field in red |
+    | `...props` | — | — | All other props (`value`, `onChange`, `name`, `required`, etc.) are spread onto the native `<input>` |
+
+    <Note>
+      The toggle button has `type="button"` to prevent it from accidentally submitting a parent `<form>`.
+    </Note>
+
+    ### Usage
+
+    ```jsx
+    // Basic usage on the login page
+    <PasswordInput
+      label="Contraseña"
+      placeholder="••••••••"
+      value={contrasena}
+      onChange={(e) => setContrasena(e.target.value)}
+    />
+
+    // With validation error
+    <PasswordInput
+      label="Nueva contraseña"
+      value={nuevaContrasena}
+      onChange={(e) => setNuevaContrasena(e.target.value)}
+      error={errores.contrasena}
+    />
+    ```
+  </Tab>
+
+  <Tab title="NombreInput">
+    ## NombreInput
+
+    **File:** `src/components/NombreInput.jsx`
+
+    A specialized text input for names. Intercepts the `onChange` event to enforce two formatting rules before forwarding the value to the parent:
+
+    1. **Letters only** — strips any character that is not a Spanish letter or space (no digits, no punctuation). Accepts accented vowels (`áéíóú`, `ÁÉÍÓÚ`) and `ñ`/`Ñ`.
+    2. **Auto-capitalize** — capitalizes the first letter of each word and lowercases the rest.
+
+    The formatted value is written back to `e.target.value` before calling the parent's `onChange`, so the parent's state setter receives the clean, formatted string without needing any extra logic.
+
+    ### Source
+
+    ```jsx src/components/NombreInput.jsx
+    import React from 'react';
+
+    export const NombreInput = ({ 
+        value, 
+        onChange, 
+        className = '', 
+        ...props 
+    }) => {
+
+        const handleChange = (e) => {
+        let inputValue = e.target.value;
+
+        // Elimina cualquier número o símbolo.
+        inputValue = inputValue.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+
+        // Autocapitalizar: primera mayuscula y el resto a minúscula.
+        const palabras = inputValue.split(' ');
+        const valorFormateado = palabras.map(palabra => {
+            if (palabra.length > 0) {
+                return palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase();
+            }
+            return '';
+        }).join(' ');
+
+        // Mutamos el valor del evento para pasárselo al componente padre
+        e.target.value = valorFormateado;
+
+        // Ejecutamos la función onChange original (si existe)
+        if (onChange) {
+            onChange(e);
+        }
+    };
+
+        return (
+            <input
+                value={value}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg transition-colors duration-200 outline-none bg-white focus:border-[#0F2C59] focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100 disabled:cursor-not-allowed ${className}`}
+                {...props}
+            />
+        );
+    };
+
+    export default NombreInput;
+    ```
+
+    ### Props
+
+    | Prop | Type | Default | Description |
+    |------|------|---------|-------------|
+    | `value` | `string` | required | Controlled value from parent state |
+    | `onChange` | `function` | — | Called with the synthetic event after formatting is applied. The formatted string is in `e.target.value`. |
+    | `className` | `string` | `""` | Additional classes merged onto the `<input>` element |
+    | `...props` | — | — | All other props (`placeholder`, `name`, `required`, `disabled`, etc.) are spread onto the native `<input>` |
+
+    <Note>
+      Unlike `Input` and `PasswordInput`, `NombreInput` does not render a `<label>` or error message. Wrap it in a parent container alongside a `<label>` and error display as needed, or pair it with the `Input` component's wrapper pattern.
+    </Note>
+
+    ### Usage
+
+    ```jsx
+    // Inside a create-user form
+    <label className="block mb-2 font-medium text-gray-700">Nombre</label>
+    <NombreInput
+      value={formData.nombre}
+      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+      placeholder="María"
+      required
+    />
+
+    // Typing "juan123" produces → "Juan"
+    // Typing "ANA MARÍA" produces → "Ana María"
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Feature modals (`src/components/modals/`)
+
+In addition to the base `Modal` wrapper, JyPS includes eight pre-built feature modals that combine `Modal` with domain-specific forms:
+
+| File | Purpose |
+|------|---------|
+| `CrearUsuarioModal.jsx` | Admin form to create a new user account |
+| `CrearTrabajadorModal.jsx` | Area manager form to add a worker to the department |
+| `EditarTrabajadorModal.jsx` | Edit an existing worker's details |
+| `EditarSolicitudModal.jsx` | Modify a pending exit pass or justification request |
+| `DetalleSolicitudModal.jsx` | Read-only view of a request's full details |
+| `ConfirmModal.jsx` | Generic confirmation dialog (e.g., delete confirmations) |
+| `ChangePasswordModal.jsx` | Change-password form for the profile page |
+| `QrModal.jsx` | Displays the QR code for an approved exit pass |
+
+Each feature modal is responsible for its own form state and calls the appropriate domain hook internally. They accept `isOpen` / `onClose` props (passed through to `Modal`) plus any data props specific to the feature.

@@ -1,0 +1,267 @@
+---
+title: "Architecture"
+description: "Clean Architecture layers and data flow in JyPS"
+---
+
+JyPS Front Web follows a three-layer **Clean Architecture** pattern adapted for React SPAs. The goal is strict separation of concerns: each layer has one job and does not reach into the responsibilities of the others.
+
+## The three layers
+
+<AccordionGroup>
+  <Accordion title="View layer — /pages and /components">
+    Pages and components are purely visual. They receive data as props or from hooks and render it. They do not fetch data directly, contain no business logic, and have no knowledge of the backend's shape.
+
+    Examples: `DashboardTrabajador.jsx`, `SolicitarPase.jsx`, `AdministradorLayout.jsx`, shared components like `Card`, `Input`, and `Button`.
+  </Accordion>
+
+  <Accordion title="Domain layer — /hooks/useUsuarios.js">
+    This hook is the business logic boundary. It calls the infrastructure layer to get raw backend data, then **maps** that data to a clean format the view layer can consume without knowing about backend field names.
+
+    The domain layer also exposes named operations (`crearUsuario`, `obtenerUsuarios`) instead of exposing raw HTTP verbs to the view.
+  </Accordion>
+
+  <Accordion title="Infrastructure layer — /hooks/useApi.js">
+    A centralized HTTP engine. It handles all fetch calls, sets headers, parses responses, and catches errors. No other file in the codebase calls `fetch` directly — all HTTP goes through `useApi`.
+  </Accordion>
+</AccordionGroup>
+
+## Data flow
+
+```text
+View (page clicks a button)
+  → Domain hook (business operation: crearUsuario)
+    → Infrastructure hook (HTTP: POST /usuarios)
+      → Backend API
+    ← raw JSON response
+  ← mapped, clean data object
+← rendered result
+```
+
+Nothing flows backwards across layer boundaries. The view never calls `useApi` directly, and `useApi` has no knowledge of what the data means.
+
+## Infrastructure layer: useApi
+
+`useApi` is the single entry point for all HTTP communication. It exposes `request`, `isLoading`, and `error`.
+
+```javascript
+// src/hooks/useApi.js
+import { useState, useCallback } from 'react';
+
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://yolonda-otocystic-personably.ngrok-free.dev/api/v1';
+
+export const useApi = () => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const request = useCallback(async (endpoint, method = 'GET', body = null) => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const headers = {
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': 'true'
+            };
+
+            const config = { method, headers };
+
+            if (body) {
+                config.body = JSON.stringify(body);
+            }
+
+            const response = await fetch(`${BASE_URL}${endpoint}`, config);
+            
+            // Handles 201 responses that return no body
+            const text = await response.text();
+            
+            let data = {};
+            if (text) {
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = { message: text };
+                }
+            }
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || `Error HTTP: ${response.status}`);
+            }
+
+            return data;
+            
+        } catch (err) {
+            setError(err.message);
+            throw err; 
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
+
+    return { request, isLoading, error };
+};
+```
+
+Key behaviors:
+- Reads the API base URL from the `VITE_API_BASE_URL` environment variable, with a fallback for local development.
+- Handles `201 Created` responses that have no body — reads the raw text first before attempting JSON parsing.
+- Surfaces errors both through the `error` state (for reactive UI) and by re-throwing (so domain hooks can handle them in try/catch).
+
+<Tip>
+  Set `VITE_API_BASE_URL` in your `.env` file to point `useApi` at any backend environment without touching source code.
+
+  ```bash
+  # .env
+  VITE_API_BASE_URL=https://your-api.example.com/api/v1
+  ```
+</Tip>
+
+## Domain layer: useUsuarios
+
+`useUsuarios` shows the mapping pattern. It wraps `useApi` and translates the backend's user object into a flat, predictable shape for the view layer.
+
+```javascript
+// src/hooks/useUsuarios.js
+import { useApi } from './useApi';
+
+export const useUsuarios = () => {
+    const { request, isLoading } = useApi();
+
+    // Maps form state to the backend's expected payload shape
+    const crearUsuario = async (formData) => {
+        try {
+            const payload = {
+                nombre: formData.nombre,
+                apellidoPaterno: formData.apellidoPaterno,
+                apellidoMaterno: formData.apellidoMaterno,
+                correo: formData.correo,
+                telefono: formData.telefono,
+                horaEntrada: `${formData.horaEntrada}:00`,
+                horaSalida: `${formData.horaSalida}:00`,
+                roles: formData.roles,
+                departamentoId: Number(formData.departamentoId)
+            };
+            const respuesta = await request('/usuarios', 'POST', payload);
+            return { exito: true, data: respuesta };
+        } catch (err) {
+            return { exito: false, mensaje: err.message };
+        }
+    };
+
+    // Maps backend user objects to a clean view-ready format
+    const obtenerUsuarios = async () => {
+        try {
+            const respuesta = await request('/usuarios', 'GET');
+            const usuariosBackend = Array.isArray(respuesta) ? respuesta : (respuesta.data || []);
+
+            const usuariosFormateados = usuariosBackend.map(user => ({
+                id: user.id || Math.random().toString(),
+                nombreCompleto: user.nombreCompleto,
+                email: user.correo,             // backend: correo → view: email
+                rol: user.roles && user.roles.length > 0
+                    ? user.roles[0].toLowerCase()
+                    : 'sin_rol',
+                departamento: user.departamento
+                    ? user.departamento.nombre
+                    : `Depto ${user.departamentoId}`,
+                telefono: user.telefono,
+                isActive: user.estatus !== undefined ? user.estatus : true
+            }));
+
+            return { exito: true, data: usuariosFormateados };
+        } catch (err) {
+            return { exito: false, mensaje: err.message };
+        }
+    };
+
+    return { crearUsuario, obtenerUsuarios, isLoading };
+};
+```
+
+The mapping in `obtenerUsuarios` means the view always receives `email` (not `correo`), always receives `isActive` (not `estatus`), and always receives a resolved `departamento` name string — even if the backend changes its field names, only this hook needs updating.
+
+## React Router structure
+
+JyPS uses `createBrowserRouter` from React Router 7. Each role has its own **layout route** with nested child routes for its features. Two pages — `Perfil` and `Historial` — are shared components reused under every role's layout.
+
+```javascript
+// src/routes.jsx (structure summary)
+export const router = createBrowserRouter([
+  // Public routes
+  { path: "/",        element: <Login /> },
+  { path: "/login",   element: <Login /> },
+  { path: "/recuperar", element: <Recuperar /> },
+
+  // Administrator panel
+  { path: "/administrador", element: <AdministradorLayout />, children: [
+    { index: true,                   element: <GestionUsuarios /> },
+    { path: "departamentos",         element: <GestionDepartamentos /> },
+    { path: "crear-solicitud",       element: <DashboardTrabajador /> },
+    { path: "solicitar-pase",        element: <SolicitarPase /> },
+    { path: "solicitar-justificante",element: <SolicitarJustificante /> },
+    { path: "perfil",                element: <Perfil /> },        // shared
+    { path: "historial",             element: <Historial /> },     // shared
+  ]},
+
+  // Employee panel
+  { path: "/trabajador", element: <TrabajadorLayout />, children: [
+    { index: true,                   element: <DashboardTrabajador /> },
+    { path: "solicitar-pase",        element: <SolicitarPase /> },
+    { path: "solicitar-justificante",element: <SolicitarJustificante /> },
+    { path: "perfil",                element: <Perfil /> },        // shared
+    { path: "historial",             element: <Historial /> },     // shared
+  ]},
+
+  // HR panel
+  { path: "/recursos-humanos", element: <RRHHLayout />, children: [
+    { index: true,                   element: <RRHHjustificantes /> },
+    { path: "pases-rh",              element: <RRHHPases /> },
+    { path: "solicitar-pase",        element: <SolicitarPase /> },
+    { path: "solicitar-justificante",element: <SolicitarJustificante /> },
+    { path: "perfil",                element: <Perfil /> },        // shared
+    { path: "historial",             element: <Historial /> },     // shared
+  ]},
+
+  // Area manager panel
+  { path: "/jefe-area", element: <JefeLayout />, children: [
+    { index: true,                   element: <DashboardJefe /> },
+    { path: "trabajadores",          element: <JefeCrearTabajador /> },
+    { path: "solicitar-pase",        element: <SolicitarPase /> },
+    { path: "solicitar-justificante",element: <SolicitarJustificante /> },
+    { path: "perfil",                element: <Perfil /> },        // shared
+    { path: "historial",             element: <Historial /> },     // shared
+  ]},
+
+  // Security guard panel
+  { path: "/guardia", element: <GuardiaLayout />, children: [
+    { index: true, element: <ValidadorCodigo /> },
+  ]},
+]);
+```
+
+<Note>
+  Role-based access enforcement is handled at the layout level. Each role's layout component (`AdministradorLayout`, `TrabajadorLayout`, etc.) is responsible for verifying the authenticated user's role before rendering children. Accessing `/administrador` as an employee is blocked at this boundary, not at the route level.
+</Note>
+
+## Project structure
+
+```text
+src/
+├── assets/               # Static assets (images, architecture diagram)
+├── components/           # Shared UI primitives: Card, Button, Input, Modal, etc.
+├── hooks/
+│   ├── useApi.js         # Infrastructure: centralized HTTP engine
+│   └── useUsuarios.js    # Domain: user business logic and data mapping
+├── pages/
+│   ├── administrador/    # AdministradorLayout, GestionUsuarios, GestionDepartamentos
+│   ├── jefe-area/        # JefeLayout, DashboardJefe, JefeCrearTabajador
+│   ├── rrhh/             # RRHHLayout, RRHHjustificantes, RRHHPases
+│   ├── trabajador/       # TrabajadorLayout, DashboardTrabajador, SolicitarPase, SolicitarJustificante
+│   ├── guardia/          # GuardiaLayout, ValidadorCodigo
+│   ├── globales/         # Perfil.jsx, Historial.jsx (shared across all role panels)
+│   ├── Login.jsx
+│   └── Recuperar.jsx
+├── App.jsx
+├── main.jsx
+├── routes.jsx            # Full router definition
+└── index.css
+```

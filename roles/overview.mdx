@@ -1,0 +1,73 @@
+---
+title: "User roles overview"
+description: "The five roles in JyPS and their responsibilities"
+---
+
+JyPS is a role-based single-page application. Every user is assigned exactly one role at account creation, and the role determines which panel they see after login, which routes they can access, and which actions are available to them.
+
+## The five roles
+
+<CardGroup cols={2}>
+  <Card title="Administrador" icon="shield-halved" href="/roles/administrator">
+    Full system access. Manages all users and departments, activates or deactivates accounts, and can also create exit pass and justification requests for themselves.
+  </Card>
+  <Card title="Jefe de Área" icon="user-tie" href="/roles/area-manager">
+    Reviews and approves or rejects team requests. Manages the workers assigned to their area and can submit personal pass and justification requests.
+  </Card>
+  <Card title="Recursos Humanos" icon="folder-open" href="/roles/hr">
+    Read-only access to all approved justifications and passes for payroll and record-keeping purposes. Does not participate in the approval workflow.
+  </Card>
+  <Card title="Trabajador" icon="id-card" href="/roles/employee">
+    Submits exit pass and justification requests, monitors their approval status, and presents a QR code to security upon departure.
+  </Card>
+  <Card title="Guardia" icon="shield" href="/roles/security-guard">
+    Validates QR authorization codes at physical checkpoints. Registers departures and returns without access to any management panels.
+  </Card>
+</CardGroup>
+
+## Role comparison
+
+| Role | Base route | Key actions |
+|------|-----------|-------------|
+| **Administrador** | `/administrador` | Create/edit/activate/deactivate users and departments; access full request flow |
+| **Jefe de Área** | `/jefe-area` | Approve/reject team requests; create and manage area workers; personal requests |
+| **Recursos Humanos** | `/recursos-humanos` | View approved justifications and passes filtered by fortnight or month |
+| **Trabajador** | `/trabajador` | Request exit passes and justifications; view own history and QR code |
+| **Guardia** | `/guardia` | Validate QR codes; register employee exits and returns |
+
+## Shared capabilities
+
+Several routes are shared across multiple roles. The navigation adapts dynamically based on the logged-in user's base path, so each role reaches the same underlying components through their own panel.
+
+| Shared page | Administrador | Jefe de Área | RRHH | Trabajador |
+|-------------|:---:|:---:|:---:|:---:|
+| Solicitar pase | ✓ | ✓ | ✓ | ✓ |
+| Solicitar justificante | ✓ | ✓ | ✓ | ✓ |
+| Historial | ✓ | ✓ | ✓ | ✓ |
+| Perfil | ✓ | ✓ | ✓ | ✓ |
+
+<Note>
+The Security Guard role has no access to the request flow, history, or profile management. Their panel exposes only the code validator view at `/guardia`.
+</Note>
+
+## Request lifecycle
+
+Understanding the lifecycle helps clarify how each role participates:
+
+<Steps>
+  <Step title="Employee submits a request">
+    A Trabajador (or any role with request access) fills out the exit pass or justification form. The request is created with status **pendiente**.
+  </Step>
+  <Step title="Area manager reviews">
+    The Jefe de Área sees the pending request in their approval dashboard, opens the detail modal, and approves or rejects it. Status moves to **aprobado** or **rechazado**.
+  </Step>
+  <Step title="QR code activates">
+    When a pass is approved, the employee's QR code is activated. They can view the code from their history page.
+  </Step>
+  <Step title="Security validates at checkpoint">
+    The Guardia enters the authorization code. If status is **aprobado**, they register the exit. If **en_curso**, they register the return. A **completado** pass cannot be reused.
+  </Step>
+  <Step title="HR reviews for payroll">
+    Recursos Humanos can view all approved justifications and passes, filtered by payroll fortnight, for record-keeping purposes.
+  </Step>
+</Steps>

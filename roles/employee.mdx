@@ -1,0 +1,150 @@
+---
+title: "Employee (Trabajador)"
+description: "Submit exit passes and absence justifications"
+---
+
+The Trabajador (Employee) role is the most common role in JyPS. Employees submit requests for exit passes when they need to leave during working hours, and justification requests when they need to document an absence after the fact.
+
+## Panel layout
+
+**Base route:** `/trabajador`
+
+The employee panel sidebar provides the following navigation:
+
+| Nav item | Route | Component |
+|----------|-------|-----------|
+| Dashboard | `/trabajador` | `DashboardTrabajador` |
+| Historial | `/trabajador/historial` | `Historial` |
+| Perfil | `/trabajador/perfil` | `Perfil` |
+
+Pass and justification forms are reached by clicking the action cards on the dashboard, not directly from the sidebar.
+
+## Dashboard
+
+The dashboard (`/trabajador`) is the first screen employees see after login. It consists of a welcome header, two action cards, and an information panel.
+
+### Welcome header
+
+Displays the employee's full name and institutional email on a dark blue gradient banner.
+
+### Action cards
+
+<CardGroup cols={2}>
+  <Card title="Pase de Salida" icon="door-open">
+    Navigates to `/trabajador/solicitar-pase`. Styled with a dark blue top border and icon. Use this to request permission to leave the premises during the workday.
+  </Card>
+  <Card title="Justificante" icon="file-lines">
+    Navigates to `/trabajador/solicitar-justificante`. Styled with a green top border and icon. Use this to document and justify a past absence.
+  </Card>
+</CardGroup>
+
+### Information card
+
+A blue information panel reminds employees of the key rules:
+
+- Requests must be approved by an administrator before they are valid.
+- The QR code is activated only after the request is approved.
+- The QR code must be presented to security personnel upon departure.
+- The history page shows the current status of all submitted requests.
+
+## Requesting an exit pass
+
+Route: `/trabajador/solicitar-pase`
+
+The exit pass form collects the following fields:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| Nombre Completo | Text (read-only) | Pre-filled from the logged-in user's profile |
+| Correo Institucional | Text (read-only) | Pre-filled from the logged-in user's profile |
+| Fecha de Salida | Date (read-only) | Auto-filled with today's date; cannot be changed |
+| Hora de Salida | Time | Required; employee must specify the intended departure time |
+| Detalles del Pase | Textarea | Required; 25–255 characters; describe the reason, destination, and estimated return time |
+
+<Warning>
+The **Detalles** field enforces a minimum of **25 characters**. Submitting a form with fewer characters will block submission and display the error: *"Debe tener al menos 25 caracteres"*. The character counter turns red below the threshold and yellow when approaching the 255-character limit.
+</Warning>
+
+After submitting successfully, the employee is redirected back to the previous screen. A note below the form reminds them that the request requires administrator approval before the QR code activates.
+
+## Requesting a justification
+
+Route: `/trabajador/solicitar-justificante`
+
+The justification form is used to retroactively document an absence. It collects:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| Nombre Completo | Text (read-only) | Pre-filled from the logged-in user's profile |
+| Correo Institucional | Text (read-only) | Pre-filled from the logged-in user's profile |
+| Fecha de Inasistencia | Date | Required; constrained to a window of up to 3 working days before today |
+| Detalles del Justificante | Textarea | Required; 25–255 characters |
+| Archivos Adjuntos | File upload + camera | Optional but strongly recommended |
+
+### Date constraint
+
+The justification date is bounded by two calculated limits:
+
+- **Minimum** — 3 working days before today (weekends excluded from the count)
+- **Maximum** — yesterday (justifications cannot be submitted for the current day)
+
+### Evidence attachments
+
+Employees can attach supporting documents in two ways:
+
+- **File picker** — accepts images, PDFs, Word documents (`.pdf`, `.doc`, `.docx`, `image/*`). Multiple files can be selected at once.
+- **Camera capture** — a camera button is available for mobile devices to photograph documents directly.
+
+Attached files are listed below the upload controls, each showing the file name and size in KB. Any file can be removed before submission.
+
+<Tip>
+Attaching evidence (medical prescription, appointment confirmation, etc.) significantly speeds up the approval process. Area managers have all the information they need to decide without follow-up.
+</Tip>
+
+<Warning>
+The **Detalles** field on the justification form applies the same 25-character minimum and 255-character maximum as the exit pass form. Attempting to submit with fewer than 25 characters blocks the form and shows: *"Debe tener al menos 25 caracteres"*.
+</Warning>
+
+## Request history
+
+Route: `/trabajador/historial`
+
+The history page shows all of the employee's submitted requests separated into two tabs:
+
+<Tabs>
+  <Tab title="Pases de Salida">
+    Lists all exit pass requests. Each card shows the reason, date, exit time, and a status badge.
+
+    Possible statuses:
+
+    | Status | Badge color | Meaning |
+    |--------|------------|---------|
+    | `pendiente` | Yellow | Awaiting area manager review |
+    | `aprobado` | Green | Approved; QR code is active |
+    | `rechazado` | Red | Rejected; reason shown in a red notice |
+    | `usado` | Gray | Pass has been exercised by security |
+    | Caducado | Orange | Pass was approved but the return time has passed |
+
+    Actions available by status:
+    - **aprobado** (not expired) — **Ver Código QR** button opens the QR code modal
+    - **pendiente** — **Editar** and **Eliminar** buttons allow the employee to modify or withdraw the request before a decision is made
+  </Tab>
+  <Tab title="Justificantes">
+    Lists all justification requests with the same status system. Approved justifications show a green badge but do not generate a QR code (justifications are not validated at security checkpoints).
+
+    Pending justifications can also be edited or deleted before a decision is made.
+  </Tab>
+</Tabs>
+
+When a request is rejected, the rejection reason provided by the area manager is shown in a red notice box on the card.
+
+## Profile
+
+Route: `/trabajador/perfil`
+
+The profile page displays the employee's personal information:
+- Full name and role
+- Institutional email
+- Phone number
+
+A **Cambiar Contraseña** button opens the `ChangePasswordModal` to update the account password.

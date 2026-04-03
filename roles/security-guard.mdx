@@ -1,0 +1,125 @@
+---
+title: "Security guard (Guardia)"
+description: "Validate QR codes and register employee exits and returns"
+---
+
+The Guardia (Security Guard) role is the final point in the exit pass lifecycle. Guards operate at physical security checkpoints and are responsible for confirming that an employee has a valid approved pass before allowing them to leave, and for registering their return.
+
+## Panel layout
+
+**Base route:** `/guardia`
+
+The security guard panel is intentionally minimal. There is a single view available:
+
+| View | Route | Component |
+|------|-------|-----------|
+| Validación de Pases | `/guardia` | `ValidadorCodigo` |
+
+Guards have no access to user management, request history, profile editing, or any other panel. Their entire workflow is contained within the code validator.
+
+## Code validator
+
+The validator view presents a single form with a large text input for the authorization code. The guard types or pastes the alphanumeric code that the employee presents on their phone (e.g. `GDKF64NC`). Input is automatically converted to uppercase.
+
+Clicking **Verificar Código** looks up the code against the system. Two outcomes are possible:
+
+- **Valid code** — a result card appears below the form with the employee's information and action buttons.
+- **Invalid code** — an alert is shown: *"Código no válido. Verifique e intente nuevamente."* No result card is shown.
+
+## Pass states and actions
+
+Each code is associated with a pass in one of three states. The state determines what the guard sees and what action is available.
+
+<Tabs>
+  <Tab title="aprobado — valid for exit">
+    The pass has been approved and the employee has not yet left.
+
+    **Result card header:** *Pase Válido para Salida* (green check icon)
+
+    The card shows:
+    - Worker name and email
+    - Date of the pass
+    - Exit time (set to the current system time at the moment of lookup)
+
+    A yellow panel asks: **¿El trabajador regresará a las instalaciones?** with a dropdown:
+    - **SÍ** — employee will return before end of shift
+    - **NO, terminó de turno** — employee is leaving for the rest of the day
+
+    The action button is:
+
+    ```
+    Registrar Salida   (green button)
+    ```
+
+    Clicking it records the departure time and the return intention, then resets the form.
+  </Tab>
+  <Tab title="en_curso — employee is out">
+    The pass is in progress: the exit has already been registered and the employee is currently outside.
+
+    **Result card header:** *Pase Válido para Entrada* (green check icon)
+
+    The card shows:
+    - Worker name and email
+    - Date of the pass
+    - Original exit time
+    - Return time (set to the current system time at the moment of lookup)
+
+    No return-intention prompt is shown, because the employee is now re-entering.
+
+    The action button is:
+
+    ```
+    Registrar Entrada de Regreso   (dark blue button)
+    ```
+
+    Clicking it records the return time and resets the form.
+  </Tab>
+  <Tab title="completado — pass exhausted">
+    The pass has completed its full cycle: the exit was registered and the return was also registered.
+
+    **Result card header:** *Pase Expirado / No Válido* (red X icon)
+
+    A red notice is shown:
+
+    > *Este pase ya cumplió su ciclo y no puede volver a usarse.*
+
+    No action buttons are shown. The guard should not allow exit on this code.
+  </Tab>
+</Tabs>
+
+## Result card information
+
+Regardless of the pass state (as long as it is not `completado`), the result card always displays the following worker details:
+
+| Field | Description |
+|-------|-------------|
+| **Trabajador** | Full name and institutional email |
+| **Fecha** | Date of the pass (formatted in es-MX locale) |
+| **Hora de Salida** | Departure time — set to the current time for `aprobado` passes, or the previously recorded time for `en_curso` passes |
+| **Hora de Regreso** | Only shown for `en_curso` passes; set to the current time at lookup |
+
+## Workflow summary
+
+<Steps>
+  <Step title="Employee presents their phone">
+    The employee opens their JyPS history, finds their approved pass, and shows the QR code or reads the authorization code aloud to the guard.
+  </Step>
+  <Step title="Guard enters the code">
+    The guard types the code into the validator input. The field auto-uppercases every character. The guard clicks **Verificar Código**.
+  </Step>
+  <Step title="Guard reviews the result card">
+    If the code is valid, the employee's details appear. The guard confirms the name matches the person standing in front of them.
+  </Step>
+  <Step title="Guard registers the movement">
+    - For an `aprobado` pass: the guard selects whether the employee will return, then clicks **Registrar Salida**.
+    - For an `en_curso` pass: the guard clicks **Registrar Entrada de Regreso**.
+    - For a `completado` pass: the guard denies exit and explains the pass has already been fully used.
+  </Step>
+  <Step title="Form resets">
+    After a successful registration, the code input clears and the result card disappears, leaving the validator ready for the next employee.
+  </Step>
+</Steps>
+
+<Warning>
+A `completado` pass cannot be reactivated or reused under any circumstances. If an employee claims their pass should still be valid, they must contact their area manager or an administrator to investigate.
+</Warning>

@@ -1,0 +1,113 @@
+---
+title: "Login"
+description: "How to sign in to JyPS and what happens on failed attempts"
+---
+
+The login page is the entry point to the JyPS system. Access it at `/login` or at the root `/`. All employees, area managers, and HR staff use the same login form — the system routes each user to their role-specific dashboard after a successful sign-in.
+
+## Signing in
+
+<Steps>
+  <Step title="Open the login page">
+    Navigate to `/login` (or `/`). You will see the JyPS login card with the UTEZ logo.
+  </Step>
+  <Step title="Enter your institutional email">
+    Type your institutional email address in the format `usuario@utez.edu.mx`. The field validates the email format before submission.
+  </Step>
+  <Step title="Enter your password">
+    Type your password. The password field includes a visibility toggle so you can confirm what you are typing.
+  </Step>
+  <Step title="Click Ingresar">
+    Submit the form. If your credentials are correct, the system clears the failed-attempt counter and redirects you to your role's dashboard.
+
+    <Note>
+      In the current demo build, login validation is simulated client-side with a hardcoded test credential (`trabajador@utez.edu.mx` / `123456`). Production deployments will authenticate against the backend API and redirect each user to their role-specific panel.
+    </Note>
+  </Step>
+</Steps>
+
+<Warning>
+  After **3 consecutive failed login attempts**, your account is locked for **1 minute**. During the lockout period the login form is hidden and replaced with a blocked-account screen. The form becomes available again automatically once the timer expires — no administrator action is required.
+</Warning>
+
+## What happens after 3 failed attempts?
+
+<Accordion title="What happens after 3 failed attempts?">
+  When you reach the limit of 3 failed login attempts, JyPS:
+
+  1. Records the lockout timestamp in your browser's `localStorage` under the key `jyps_bloqueo`.
+  2. Replaces the login form with a **Cuenta Bloqueada Temporalmente** screen that displays a countdown timer showing the remaining lockout time in `m:ss` format.
+  3. Shows a suggestion panel with the following options:
+     - Wait for the lockout period to pass.
+     - Verify that you are using the correct credentials.
+     - Use the password recovery link if you have forgotten your password.
+     - Contact the system administrator if you need additional help.
+  4. Provides a direct link to the password recovery page (`/recuperar`) from the blocked screen.
+
+  After 1 minute the countdown reaches zero, the `jyps_bloqueo` entry is deleted from `localStorage`, the failed-attempt counter resets to 0, and the login form reappears automatically.
+
+  <Note>
+    The lockout state persists across page refreshes. If you close and reopen the browser before the minute has elapsed, the remaining lockout time is restored from `localStorage`.
+  </Note>
+</Accordion>
+
+## Error messages during login
+
+While the account is not locked, each failed attempt displays an inline error below the password field:
+
+```
+Credenciales incorrectas. Te quedan N intento(s).
+```
+
+Where `N` is the number of remaining attempts before lockout.
+
+## No account yet?
+
+JyPS does not offer self-registration. If you do not have an account, contact the system administrator to have one created for you.
+
+---
+
+## Security and privacy notices
+
+Two notices are displayed below the login card on every visit.
+
+### Security notice
+
+JyPS is **not** designed to store sensitive personally identifiable information (PII). Do not enter any of the following in your requests or justifications:
+
+- Detailed medical diagnoses or sensitive health conditions
+- Financial information (account numbers, cards, salaries)
+- Official identity documents (INE, full CURP, RFC)
+- Information about third parties without their consent
+- Data relating to minors without parental authorization
+
+Use general descriptions instead — for example, "Cita médica" or "Trámite personal".
+
+The current security measures in place include:
+
+- Encrypted local storage in the browser
+- Active/inactive account validation
+- Role-based access control
+- Route protection via authentication
+
+### Privacy notice
+
+The full privacy notice is accessible from the login page by clicking **Ver Aviso de Privacidad completo**. Key details are summarised below.
+
+**Responsible party:** Universidad Tecnológica Emiliano Zapata del Estado de Morelos (UTEZ), Av. Universidad Tecnológica No. 1, Col. Palo Escrito, Emiliano Zapata, Morelos.
+
+**Data collected:** The system collects only the following:
+
+- Nombre completo
+- Correo electrónico institucional
+- Número de teléfono
+- Rol en la institución
+- Información sobre solicitudes de pases y justificantes
+
+**Purpose:** Data is used exclusively to manage exit pass and absence justification requests, enforce institutional access control, and produce internal statistical reports.
+
+**Storage:** Data is stored locally in your browser via `localStorage`. You are responsible for not sharing devices where your session is active.
+
+**ARCO rights:** You have the right to access, correct, cancel, or oppose the processing of your personal data under the Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP). Contact the system administrator or the institution's IT department to exercise these rights.
+
+_Last updated: February 11, 2026._

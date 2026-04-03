@@ -1,0 +1,125 @@
+---
+title: "Project structure"
+description: "How the JyPS codebase is organized"
+---
+
+## Directory tree
+
+```
+JyPS-Front-Web/
+├── public/                      # Static assets served as-is
+├── src/
+│   ├── App.jsx                  # Root component, renders RouterProvider
+│   ├── main.jsx                 # React 19 entry point
+│   ├── routes.jsx               # All application routes
+│   ├── index.css                # Global styles (Tailwind base)
+│   ├── assets/                  # Images and static assets
+│   │   └── Arquitectura.png
+│   ├── components/              # Reusable UI components
+│   │   ├── Button.jsx
+│   │   ├── Card.jsx
+│   │   ├── Input.jsx
+│   │   ├── Modal.jsx
+│   │   ├── PasswordInput.jsx
+│   │   ├── NombreInput.jsx
+│   │   └── modals/              # Feature-specific modal components
+│   │       ├── ChangePasswordModal.jsx
+│   │       ├── ConfirmModal.jsx
+│   │       ├── CrearTrabajadorModal.jsx
+│   │       ├── CrearUsuarioModal.jsx
+│   │       ├── DetalleSolicitudModal.jsx
+│   │       ├── EditarSolicitudModal.jsx
+│   │       ├── EditarTrabajadorModal.jsx
+│   │       └── QrModal.jsx
+│   ├── hooks/                   # Custom React hooks
+│   │   ├── useApi.js            # HTTP infrastructure layer
+│   │   └── useUsuarios.js       # User domain layer
+│   └── pages/                   # Route-level view components
+│       ├── Login.jsx
+│       ├── Recuperar.jsx
+│       ├── administrador/       # Admin panel pages
+│       │   ├── AdministradorLayout.jsx
+│       │   ├── GestionUsuarios.jsx
+│       │   └── GestionDepartamentos.jsx
+│       ├── jefe-area/           # Area manager pages
+│       │   ├── JefeLayout.jsx
+│       │   ├── DashboardJefe.jsx
+│       │   └── JefeCrearTabajador.jsx
+│       ├── rrhh/                # HR pages
+│       │   ├── RRHHLayout.jsx
+│       │   ├── RRHHjustificantes.jsx
+│       │   └── RRHHPases.jsx
+│       ├── trabajador/          # Employee pages
+│       │   ├── TrabajadorLayout.jsx
+│       │   ├── DashboardTrabajador.jsx
+│       │   ├── SolicitarPase.jsx
+│       │   └── SolicitarJustificante.jsx
+│       ├── guardia/             # Security guard pages
+│       │   ├── GuardiaLayout.jsx
+│       │   └── ValidadorCodigo.jsx
+│       └── globales/            # Shared pages accessible from any role panel
+│           ├── Perfil.jsx
+│           └── Historial.jsx
+├── .env                         # Local environment variables (add to .gitignore — not covered by default)
+├── package.json
+├── vite.config.js
+└── eslint.config.js
+```
+
+## Three-layer architecture
+
+JyPS separates responsibilities into three layers that map directly onto the directory structure:
+
+<CardGroup cols={3}>
+  <Card title="View layer" icon="layout">
+    **`pages/` and `components/`**
+
+    Pure presentation. No direct data fetching, no `fetch()` calls. Pages receive data via props or by calling domain hooks. Components are stateless UI primitives.
+  </Card>
+
+  <Card title="Domain layer" icon="code">
+    **`hooks/useUsuarios.js`**
+
+    Business logic and data mapping. Translates raw backend responses into clean shapes the view layer expects. Wraps infrastructure calls and returns `{ exito, data, mensaje }`.
+  </Card>
+
+  <Card title="Infrastructure layer" icon="server">
+    **`hooks/useApi.js`**
+
+    HTTP transport. Manages the `fetch` lifecycle, sets headers, handles `isLoading` and `error` state, normalizes HTTP error responses, and exposes a single `request()` function.
+  </Card>
+</CardGroup>
+
+## Routing
+
+Routes are defined in a single file (`src/routes.jsx`) using React Router 7's `createBrowserRouter`. Each role gets its own path prefix with a layout component that renders shared chrome (nav, sidebar) and an `<Outlet />` for nested pages.
+
+| Path prefix | Role | Layout component |
+|-------------|------|-----------------|
+| `/` or `/login` | Unauthenticated | — |
+| `/administrador` | Administrator | `AdministradorLayout` |
+| `/trabajador` | Employee | `TrabajadorLayout` |
+| `/recursos-humanos` | HR | `RRHHLayout` |
+| `/jefe-area` | Area manager | `JefeLayout` |
+| `/guardia` | Security guard | `GuardiaLayout` |
+
+Pages under `globales/` (`Perfil`, `Historial`) are mounted as children of **every** role layout, so they are accessible from any panel without duplicating page code.
+
+## Entry point
+
+`src/main.jsx` bootstraps the React tree using the React 19 `createRoot` API:
+
+```javascript src/main.jsx
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import './index.css'
+import App from './App.jsx'
+
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+```
+
+`App.jsx` renders the `RouterProvider` backed by the router exported from `routes.jsx`.

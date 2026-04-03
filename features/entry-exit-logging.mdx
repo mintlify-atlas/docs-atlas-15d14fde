@@ -1,0 +1,119 @@
+---
+title: "Entry and exit logging"
+description: "How exit and return movements are registered at the checkpoint"
+---
+
+Every time an employee leaves or returns to the facility through the security checkpoint, a movement is recorded against their pass. This page describes how those movements are captured and how they drive the pass lifecycle.
+
+## Pass lifecycle
+
+A single pass moves through four statuses from creation to completion. Each transition is triggered by a specific actor.
+
+<Steps>
+  <Step title="Employee submits a request">
+    The employee submits either a **Pase de Salida** (exit pass) or a **Justificante** (absence justification) through the employee portal.
+
+    The request is created with `estado: "Pendiente"`.
+  </Step>
+  <Step title="Manager approves the request">
+    The area manager reviews the request in the **Panel de Aprobaciones** and clicks **Aprobar**.
+
+    The request status changes to `estado: "Aprobado"` and a unique QR authorization code is generated and made available to the employee.
+  </Step>
+  <Step title="Guard validates the code at exit">
+    The employee presents the authorization code to the security guard. The guard enters it in the **Validación de Pases** screen.
+
+    The system returns the pass in `aprobado` state — showing "Pase Válido para Salida" with a green indicator.
+  </Step>
+  <Step title="Guard registers the exit">
+    The guard confirms the employee's exit by clicking **Registrar Salida**.
+
+    Two values are recorded at this moment:
+
+    - `horaSalida` — the current system time (`getCurrentTime()`)
+    - `isReturning` — whether the employee will return (`"si"` or `"no"`)
+
+    The pass status transitions to `estado: "en_curso"`.
+
+    If the guard selects `"no"` (the employee will not return), the pass transitions directly to `estado: "completado"` instead.
+  </Step>
+  <Step title="Employee returns — guard validates the code again">
+    When the employee returns to the facility they present the **same authorization code**. The guard enters it again.
+
+    The system returns the pass in `en_curso` state — showing "Pase Válido para Entrada" with a blue action button.
+  </Step>
+  <Step title="Guard registers the return">
+    The guard clicks **Registrar Entrada de Regreso**.
+
+    The return time is recorded:
+
+    - `horaRegreso` — the current system time at the moment the button is clicked
+
+    The pass status transitions to `estado: "completado"`. The code can no longer be used.
+  </Step>
+</Steps>
+
+## Status transitions
+
+The diagram below summarises the complete set of allowed status changes:
+
+```
+Pendiente
+    │
+    │  Manager approves
+    ▼
+Aprobado
+    │
+    │  Guard registers exit (isReturning: "si")
+    ▼
+en_curso
+    │
+    │  Guard registers return
+    ▼
+Completado
+
+Aprobado ──► Completado   (if isReturning: "no" at exit)
+```
+
+## Movement registration details
+
+### Registering an exit
+
+When the guard clicks **Registrar Salida** on a pass in `aprobado` state:
+
+1. The current time is captured via `getCurrentTime()` — formatted as `HH:MM` in the `es-MX` locale
+2. The `isReturning` value from the dropdown is read (`"si"` or `"no"`)
+3. The movement is posted to the backend with both values
+4. The input field is cleared and the result card is dismissed, ready for the next employee
+
+### Registering a return
+
+When the guard clicks **Registrar Entrada de Regreso** on a pass in `en_curso` state:
+
+1. The current time is captured via `getCurrentTime()` as `horaRegreso`
+2. The movement is posted to the backend
+3. The input field is cleared and the result card is dismissed
+
+## Pass expiry rules
+
+<Warning>
+A pass in `completado` state cannot be reused under any circumstances. If the guard attempts to validate a completed code, the result card shows a red "Pase Expirado / No Válido" indicator and no action buttons are available.
+</Warning>
+
+The pass becomes `completado` in two scenarios:
+
+- The employee returns and the guard registers the return entry
+- The guard registered the exit with `isReturning: "no"`, indicating the employee finished their shift and will not return that day
+
+## getCurrentTime helper
+
+The time recorded for each movement is always the live system clock at the instant the action button is clicked, not the time on the pass itself.
+
+```javascript
+const getCurrentTime = () => {
+  const now = new Date();
+  return now.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+};
+```
+
+This ensures the recorded times are accurate to the actual physical checkpoint event rather than any pre-approved schedule.

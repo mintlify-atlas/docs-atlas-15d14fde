@@ -1,0 +1,151 @@
+---
+title: "Request approvals"
+description: "Review, approve, or reject employee requests as an area manager"
+---
+
+The **Panel de Aprobaciones** is the primary workspace for users with the `jefe_de_departamento` role. It presents all requests submitted by workers in the manager's area and provides the tools to act on each one.
+
+## Dashboard statistics
+
+Three cards at the top of the page reflect live counts of requests grouped by their current status.
+
+<CardGroup cols={3}>
+  <Card title="Pendientes" icon="clock">
+    Requests awaiting a decision. Counter shown in yellow.
+  </Card>
+  <Card title="Aprobadas" icon="check-circle">
+    Requests that have been approved. Counter shown in green.
+  </Card>
+  <Card title="Rechazadas" icon="x-circle">
+    Requests that have been rejected. Counter shown in red.
+  </Card>
+</CardGroup>
+
+## Filtering and sorting requests
+
+Two controls sit above the request list and work together.
+
+### Status tabs
+
+A tab bar with three options determines which request queue is displayed:
+
+| Tab | Shown requests |
+|---|---|
+| **Pendientes** | Requests with `estado: "Pendiente"` (selected by default) |
+| **Aprobados** | Requests with `estado: "Aprobado"` |
+| **Rechazados** | Requests with `estado: "Rechazado"` |
+
+The active tab has a white background with a shadow; inactive tabs use a grey background.
+
+### Type filter dropdown
+
+A dropdown placed to the right of the status tabs lets you narrow the list by request type:
+
+| Option | Behaviour |
+|---|---|
+| **Mostrar Ambos** | Shows both Pases and Justificantes (default) |
+| **Solo Pases** | Shows only exit pass requests (`tipo: "Pase"`) |
+| **Solo Justificantes** | Shows only absence justification requests (`tipo: "Justificante"`) |
+
+### Sort order
+
+The sort order is determined automatically based on the selected status tab:
+
+- **Pendiente** — requests are sorted oldest first (ascending `createdAt`), forming a first-in-first-out priority queue
+- **Aprobado / Rechazado** — requests are sorted newest first (descending `createdAt`), showing the most recent history at the top
+
+## Request list
+
+Each request appears as a clickable row. Clicking anywhere on the row opens the detail modal.
+
+The row contains:
+
+- **Type icon** — blue circle with a file icon for Pases; purple circle for Justificantes
+- **Worker name** — displayed in bold
+- **Summary line** — request type label followed by the first 30 characters of the reason (`motivo`), truncated with `...` if longer
+- **Date** — submission date formatted as `DD/MM/YYYY` (localised to `es-MX`)
+- **Time** — submission time in `HH:MM` format (hidden on small screens)
+- **Status badge** — colour-coded pill matching the tab:
+
+| Status | Badge colours |
+|---|---|
+| Pendiente | Yellow background, dark yellow text |
+| Aprobado | Green background, dark green text |
+| Rechazado | Red background, dark red text |
+
+## Request detail modal
+
+Clicking a row opens the **DetalleSolicitudModal**, which shows the full request and—for pending requests—exposes approve/reject actions.
+
+### Header
+
+Displays "Detalle de Justificante" or "Detalle de Pase de Salida" depending on the request type, alongside the current status badge.
+
+### Worker information card
+
+| Field | Description |
+|---|---|
+| Nombre | Full name of the worker who submitted the request |
+| Email | Worker's email address |
+
+### Details card
+
+| Field | Shown when |
+|---|---|
+| Fecha | Always |
+| Hora de salida | Request type is `Pase` and `horaSalida` is set |
+| Motivo | Always; displayed in a bordered text box |
+
+### Evidence (Justificantes only)
+
+If the request is a Justificante and an `evidencia` filename is attached, a blue card shows the filename as a link to download or view the file.
+
+### Resolution block
+
+For processed requests (non-Pending), an additional block appears:
+
+<Tabs>
+  <Tab title="Approved">
+    A green card shows: **Aprobado por:** `<name of reviewer>`
+  </Tab>
+  <Tab title="Rejected">
+    A red card shows: **Motivo de rechazo:** `<rejection reason>`
+  </Tab>
+</Tabs>
+
+### Action buttons
+
+<Tabs>
+  <Tab title="Pending request">
+    Two buttons are shown side by side:
+
+    - **Aprobar** (green) — approves the request and closes the modal
+    - **Rechazar** (red, outlined) — rejects the request and closes the modal
+  </Tab>
+  <Tab title="Processed request">
+    A single **Cerrar** button closes the modal. No further actions are available on already-processed requests.
+  </Tab>
+</Tabs>
+
+## Request data model
+
+The following fields are available on each request object:
+
+```javascript
+{
+  id: number,
+  tipo: 'Pase' | 'Justificante',
+  estado: 'Pendiente' | 'Aprobado' | 'Rechazado',
+  createdAt: string,        // ISO 8601 timestamp
+  fecha: string,            // YYYY-MM-DD
+  horaSalida: string,       // "HH:MM" — present on Pase requests
+  motivo: string,
+  evidencia: string,        // filename — present on Justificante requests when provided
+  revisadoPor: string,      // name of approving manager — present on Aprobado requests
+  motivoRechazo: string,    // rejection reason — present on Rechazado requests
+  trabajador: {
+    nombre: string,
+    email: string
+  }
+}
+```

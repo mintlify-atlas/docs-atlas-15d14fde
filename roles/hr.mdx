@@ -1,0 +1,113 @@
+---
+title: "Human Resources (Recursos Humanos)"
+description: "Review approved justifications and passes for payroll records"
+---
+
+The Recursos Humanos (HR) role provides read-only visibility into all approved justifications and exit passes across the organization. HR personnel do not participate in the approval workflow — they only consume records that have already been authorized by an area manager.
+
+## Panel layout
+
+**Base route:** `/recursos-humanos`
+
+The HR panel sidebar includes the following navigation items:
+
+| Nav item | Route | Component |
+|----------|-------|-----------|
+| Justificantes Aprobados | `/recursos-humanos` | `RRHHjustificantes` |
+| Pases de Salida | `/recursos-humanos/pases-rh` | `RRHHPases` |
+| Generar Solicitud | `/recursos-humanos/crear-solicitud` | `DashboardTrabajador` |
+| Historial | `/recursos-humanos/historial` | `Historial` |
+| Perfil | `/recursos-humanos/perfil` | `Perfil` |
+
+<Info>
+HR also has access to the personal request flow (solicitar pase, solicitar justificante) through the same shared components used by employees. Their own requests follow the standard approval workflow.
+</Info>
+
+## Approved justifications
+
+The justifications view (`/recursos-humanos`) is the index route for the HR panel. It lists every justification request that has been approved by an area manager.
+
+### Statistics
+
+A single stat card shows the **Total Aprobados** count for the current filter selection, giving HR a quick headcount for payroll reconciliation.
+
+### Filters
+
+Three independent filters can be combined:
+
+<Accordion title="Period filter (fortnights)">
+  HR payroll is typically processed in two-week cycles. The period filter buttons reflect this:
+
+  | Button | Coverage |
+  |--------|----------|
+  | **Todos** | All approved justifications regardless of date |
+  | **1ra Quincena (1-15)** | Days 1 through 15 of the current calendar month |
+  | **2da Quincena (16-fin)** | Day 16 through the end of the current calendar month |
+  | **Mes Completo** | All days within the current calendar month |
+
+  The quincena filters match against the date recorded on the justification, not the date it was approved.
+</Accordion>
+
+<Accordion title="Department filter">
+  A dropdown lists all available departments. Selecting a department restricts the list to justifications submitted by workers in that department. Selecting **Todos los departamentos** removes the department restriction.
+</Accordion>
+
+<Accordion title="Text search">
+  A free-text search field matches against the worker's `nombre`, `email`, or the `motivo` (reason) field of the justification. Results update on every keystroke.
+</Accordion>
+
+All three filters apply simultaneously. A justification must satisfy every active filter to appear in the results.
+
+### Justification record fields
+
+Each justification card in the list displays:
+
+| Field | Source |
+|-------|--------|
+| Worker name | `trabajador.nombre` |
+| Worker email | `trabajador.email` |
+| Date of absence | `fecha` (formatted as day-month-year in es-MX locale) |
+| Reason | `motivo` |
+| Evidence file name | `evidencia` (shown only when a file was attached) |
+| Approved by | `aprobadoPor` (name of the area manager who approved) |
+
+The approved status badge is always visible on the right side of each card.
+
+## Approved passes
+
+The passes view (`/recursos-humanos/pases-rh`) lists every exit pass that has been approved and used. It provides the same filtering capabilities as the justifications view, plus additional return-time tracking.
+
+### Statistics
+
+Three stat cards at the top of the page show:
+
+| Card | Description |
+|------|-------------|
+| **Total Pases** | Total number of approved exit passes |
+| **A Tiempo** | Passes where the employee returned on schedule (`estadoRetorno: a_tiempo`) |
+| **Retrasados** | Passes where the employee returned late (`estadoRetorno: retrasado`) |
+
+### Filters
+
+The same three filter mechanisms from the justifications view are available here:
+- Period filter (1ra Quincena, 2da Quincena, Mes Completo, Todos)
+- Department dropdown
+- Free-text search (matches nombre, email, motivo)
+
+### Pass record fields
+
+Each pass card displays:
+
+| Field | Source |
+|-------|--------|
+| Worker name | `trabajador.nombre` |
+| Worker email | `trabajador.email` |
+| Date | `fecha` |
+| Exit time | `horaSalida` |
+| Return time | `horaRegreso` (shown as "Sin retorno" when null) |
+| Reason | `motivo` |
+| Authorized by | `aprobadoPor` |
+
+<Warning>
+HR cannot approve, reject, edit, or delete any records. All data shown in this panel is read-only. Any changes to request status must go through an area manager.
+</Warning>

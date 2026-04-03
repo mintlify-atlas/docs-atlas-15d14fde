@@ -1,0 +1,111 @@
+---
+title: "Area manager (Jefe de Área)"
+description: "Review and approve or reject team requests"
+---
+
+The Jefe de Área (Area Manager) is responsible for reviewing every exit pass and justification request submitted by the workers in their department. They are the single decision-making point in the approval workflow before a request reaches its final state.
+
+## Panel layout
+
+**Base route:** `/jefe-area`
+
+The area manager panel uses the same sidebar layout as the rest of the application, with the following navigation items:
+
+| Nav item | Route | Component |
+|----------|-------|-----------|
+| Panel de Aprobaciones | `/jefe-area` | `DashboardJefe` |
+| Gestión de Trabajadores | `/jefe-area/trabajadores` | `JefeCrearTabajador` |
+| Generar Solicitud | `/jefe-area/crear-solicitud` | `DashboardTrabajador` |
+| Historial | `/jefe-area/historial` | `Historial` |
+| Perfil | `/jefe-area/perfil` | `Perfil` |
+
+## Approvals dashboard
+
+The approvals dashboard (`/jefe-area`) is the index view for this role. Its purpose is to surface pending requests for immediate action while keeping a log of already-processed ones.
+
+### Statistics overview
+
+Three stat cards at the top of the page count requests by outcome:
+
+| Card | Color | Description |
+|------|-------|-------------|
+| **Pendientes** | Yellow | Requests awaiting a decision |
+| **Aprobadas** | Green | Requests that have been approved |
+| **Rechazadas** | Red | Requests that have been rejected |
+
+### Filter controls
+
+The request list can be narrowed using two independent filters:
+
+- **Status tab bar** — three tabs: `Pendientes`, `Aprobados`, `Rechazados`. Only one status is shown at a time. The default view opens on **Pendiente** to surface urgent requests immediately.
+- **Type dropdown** — controls which request types appear in the current status view:
+  - Mostrar Ambos (default)
+  - Solo Pases
+  - Solo Justificantes
+
+### Sorting logic
+
+The sort order changes depending on which status tab is active:
+
+<Tabs>
+  <Tab title="Pendiente (priority queue)">
+    Requests are sorted **oldest first**. This ensures that the requests that have been waiting longest are always at the top, acting as a first-in, first-out priority queue.
+  </Tab>
+  <Tab title="Aprobado / Rechazado (history log)">
+    Requests are sorted **newest first**, so the most recently processed items appear at the top of the log.
+  </Tab>
+</Tabs>
+
+### Request list items
+
+Each request row in the list shows:
+- A **type icon** — blue for Pase, purple for Justificante
+- **Worker name**
+- **Request type** and a truncated preview of the reason (first 30 characters)
+- **Date and time** the request was submitted (right-aligned, hidden on small screens)
+- **Status badge** — color-coded pill matching the statistics cards
+
+Clicking any row opens the `DetalleSolicitudModal` for that request.
+
+### Detail modal
+
+The `DetalleSolicitudModal` presents the full request details. The area manager can **approve** or **reject** the request from within this modal. Rejections require a reason that is stored and displayed to the employee in their history.
+
+<Note>
+The modal is fed a flattened copy of the request object that promotes `trabajador.nombre` and `trabajador.email` to top-level fields to match the modal component's expected shape.
+</Note>
+
+## Worker management
+
+The worker management view (`/jefe-area/trabajadores`) lets area managers create new worker accounts and edit the information of existing ones within their area.
+
+### Worker list
+
+Active workers are listed in cards showing:
+- Avatar (first letter of name)
+- Full name and department badge
+- Email and phone number
+- **Editar** button
+
+The list supports free-text search across `nombre`, `email`, and `departamento`.
+
+### Creating a worker
+
+Clicking **Crear Trabajador** opens `CrearTrabajadorModal`. The form collects the worker's name, phone, email, and department (selected from the active departments list). On success, the new worker is added to the list immediately.
+
+### Editing a worker
+
+Clicking **Editar** on any card opens `EditarTrabajadorModal` pre-filled with that worker's existing data. Submitting the form sends an update and refreshes the entry in the list.
+
+## Personal request access
+
+Area managers have the same request submission capabilities as employees. Navigating to **Generar Solicitud** in the sidebar loads `DashboardTrabajador` with the `/jefe-area` base path. From there the manager can navigate to:
+
+- `/jefe-area/solicitar-pase` — exit pass form
+- `/jefe-area/solicitar-justificante` — justification form
+
+Requests submitted by an area manager appear in their own history at `/jefe-area/historial` and follow the same approval workflow as any other employee request. Their own requests would be reviewed by a higher-level administrator.
+
+<Tip>
+The dashboard defaults to the **Pendiente** tab on every load. Area managers should check this view at the start of each shift to process any requests that arrived overnight.
+</Tip>

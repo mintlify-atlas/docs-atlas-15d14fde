@@ -1,0 +1,78 @@
+---
+title: "Introduction"
+description: "What JyPS is, who uses it, and what problem it solves"
+---
+
+## What is JyPS?
+
+**JyPS** stands for **Sistema de Justificantes y Pases de Salida** — a role-based single-page application (SPA) built for institutions to manage two core administrative workflows digitally:
+
+- **Pases de Salida** (Exit Passes): employees request permission to leave the premises during working hours. Once approved, a QR code is generated and scanned by security at the exit.
+- **Justificantes** (Absence Justifications): employees submit justifications for absences or tardiness, which flow to HR for review and recording.
+
+Before JyPS, these workflows were handled on paper — passes were written by hand, signed manually, and filed physically. JyPS replaces that process with a structured digital flow that gives every role visibility into requests relevant to them, in real time.
+
+## The problem it solves
+
+Paper-based exit pass and justification workflows create several institutional problems:
+
+- No audit trail — paper passes can be lost, forged, or duplicated.
+- Slow approvals — managers must be physically present to sign.
+- No centralized visibility — HR has no real-time picture of who is absent or on a pass.
+- Security gaps — guards cannot verify pass authenticity without calling the issuing office.
+
+JyPS addresses all of these by routing requests digitally through a defined approval chain and issuing QR codes that security can scan to validate a pass on the spot.
+
+## User roles
+
+JyPS uses strict role-based access control. Every user logs in to a panel tailored to their responsibilities.
+
+| Role | Spanish name | Primary responsibility |
+|---|---|---|
+| Administrator | Administrador | Manages users, departments, and system configuration |
+| Area Manager | Jefe de Área | Reviews and approves/rejects exit pass requests from their team |
+| HR | Recursos Humanos | Reviews justificantes and manages absence records |
+| Employee | Trabajador | Submits exit pass requests and absence justifications |
+| Security Guard | Guardia | Scans QR codes at the exit to validate approved passes |
+
+## High-level workflow
+
+1. An **employee** logs in and submits an exit pass request with date, time, and a description of the reason.
+2. The request goes to the **area manager** for approval or rejection.
+3. Once approved, a QR code is generated and associated with the request.
+4. The employee presents the QR code at the exit gate.
+5. The **security guard** scans the code in the JyPS guard panel to verify the pass is valid and approved.
+6. For absences, the employee submits a justificante, which routes to **HR** for review.
+
+## Technology stack
+
+JyPS Front Web is built with a modern, lightweight stack focused on performance and maintainability.
+
+| Technology | Version | Role |
+|---|---|---|
+| React | 19 | UI component model and state management via hooks |
+| Vite | 7 | Build tool and dev server with fast HMR |
+| Tailwind CSS | 4 | Utility-first styling |
+| React Router | 7 | Client-side routing with `createBrowserRouter` |
+| Lucide React | 0.577 | SVG icon library |
+| react-qr-code | 2.0 | QR code generation for approved passes |
+| @yudiel/react-qr-scanner | 2.5 | QR code scanning in the guard panel |
+
+All HTTP communication uses the native Fetch API, wrapped in a custom `useApi` hook.
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="Quick start" icon="rocket" href="/quickstart">
+    Log in and submit your first exit pass request in under 5 minutes.
+  </Card>
+  <Card title="Roles overview" icon="users" href="/roles/overview">
+    Understand what each role can see and do inside JyPS.
+  </Card>
+  <Card title="Exit passes" icon="door-open" href="/features/exit-passes">
+    Full walkthrough of the exit pass request and approval flow.
+  </Card>
+  <Card title="Login and security" icon="shield" href="/features/login">
+    Credential format, lockout policy, and password recovery.
+  </Card>
+</CardGroup>
